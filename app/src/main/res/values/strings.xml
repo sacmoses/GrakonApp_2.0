@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Grakon</string>
+    <string name="action_settings">Settings</string>
+    <string name="status_text_view">Status: </string>
+    <string name="status_is_connected">Connected</string>
+    <string name="Modes_textview">Modes:</string>
+    <string name="all_off_textview">ALL OFF</string>
+    <string name="relax_textview">RELAX</string>
+    <string name="night_drive_textview">NIGHT DRIVE</string>
+    <string name="activity_textview">ACTIVITY</string>
+    <string name="external_textview">EXTERNAL</string>
+    <string name="custom_2_textview">CUSTOM 2</string>
+    <string name="custom_3_textview">CUSTOM 3</string>
+    <string name="custom_1_textview">CUSTOM 1</string>
+    <string name="light_1">1</string>
+    <string name="light_2">2</string>
+    <string name="light_3">3</string>
+    <string name="light_4">4</string>
+    <string name="light_5">5</string>
+    <string name="light_6">6</string>
+    <string name="light_7">7</string>
+    <string name="On_button">On</string>
+    <string name="Off_button">Off</string>
+    <string name="is_disconnected">Disconnected</string>
+    <string name="Go_back">Go back to Previous Screen</string>
+    <string name="grakon">Grakon</string>
+    <string name="Go_To_Personal_Settings">Go to Personal Settings page</string>
+    <string name="Scan">Scan</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="chose_light">Chose Light:</string>
+    <string name="searching">Searching....</string>
+
+</resources>

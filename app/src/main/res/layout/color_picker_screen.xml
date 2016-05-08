@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="#000"
+    android:gravity="center|top"
+    >
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Name"
+        android:textColor="#FFF"
+        android:background="#000"
+        android:textSize="30sp"
+        android:id="@+id/current_mode_edit_text"/>
+
+    <com.example.cedar.grakontestapp.ColorPicker
+        android:id="@+id/colorPicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:background="#333" />
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+
+<!--        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button_background"
+            android:text="Back"
+            android:textSize="30sp"
+            android:contentDescription="@string/Go_back"
+            android:id="@+id/back_button"
+            android:onClick="colors_back_click"
+            android:layout_gravity="left"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginRight="20dp"
+            />-->
+        <Button
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="Set Left"
+            android:textSize="30sp"
+            android:background="@drawable/modebutton_non_active1"
+            android:onClick="set_color_left"
+            android:clickable="true"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"/>
+
+        <Button
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="Set Right"
+            android:textSize="30sp"
+            android:background="@drawable/modebutton_non_active1"
+            android:onClick="set_color_right"
+            android:clickable="true"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"/>
+
+
+        </LinearLayout>
+
+
+
+</LinearLayout>

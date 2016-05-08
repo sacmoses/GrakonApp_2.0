@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000"
+    android:gravity="center">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="left"
+        android:layout_marginBottom="20dp"
+        android:layout_marginTop="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFF"
+            android:text="Status: "
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:layout_marginRight="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/is_disconnected"
+            android:textSize="27sp"
+            android:textColor="#F00"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginRight="10dp"
+            android:id="@+id/connect_disconnect_textView"/>
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:textSize="30dp"
+            android:id="@+id/rssi_value"
+            android:background="#000"
+            android:textColor="#FFF"/>
+
+        </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ambient Select:"
+                android:textSize="20sp"
+                android:textColor="#FFF"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:gravity="left"
+                android:layout_marginRight="120dp"/>
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="edit"
+                android:textColor="#000"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:background="#808080"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:onClick="edit_button_click"
+                android:id="@+id/ambient_edit_button"
+                android:layout_marginBottom="5dp"/>
+
+            </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
+
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/ambient_select_spinner"
+                android:spinnerMode="dropdown"
+                android:clickable="true"
+                android:background="@drawable/modebutton_active1"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:textAlignment="center"
+                />
+
+            <ToggleButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:id="@+id/color_select_toggle_button"
+                android:textOn="On"
+                android:textOff="Off"
+                android:layout_weight="2"
+                android:onClick="ambient_toggle_click"/>
+
+            </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="0dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginBottom="3dp"
+                android:textColor="#000"
+                android:id="@+id/overhead_textview"
+                android:text="Overhead"
+                android:textSize="30sp"
+                android:background="@drawable/modebutton_non_active1"
+                android:gravity="center"/>
+
+            <ToggleButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:id="@+id/overhead_toggle_button"
+                android:layout_weight="2"
+                android:textOn="On"
+                android:textOff="Off"
+
+                android:onClick="overhead_toggle_click"/>
+
+        </LinearLayout>
+
+        <SeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/overhead_seekbar"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="0dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginBottom="3dp"
+                android:textColor="#000"
+                android:id="@+id/reading_textview"
+                android:text="Reading"
+                android:textSize="30sp"
+                android:background="@drawable/modebutton_non_active1"
+                android:gravity="center"/>
+
+            <ToggleButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:id="@+id/reading_toggle_button"
+                android:layout_weight="2"
+                android:textOn="On"
+                android:textOff="Off"
+                android:onClick="reading_toggle_click"/>
+
+        </LinearLayout>
+
+        <SeekBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/reading_seekbar"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginBottom="3dp"
+                android:textColor="#000"
+                android:id="@+id/demo_textview"
+                android:text="Demo"
+                android:textSize="30sp"
+                android:background="@drawable/modebutton_non_active1"
+                android:gravity="center"/>
+
+            <ToggleButton
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:id="@+id/demo_toggle_button"
+                android:layout_weight="2"
+                android:textOn="On"
+                android:textOff="Off"
+                android:onClick="demo_click"/>
+
+        </LinearLayout>
+
+
+<!--    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/RSSI_edit_text"
+        android:background = "#FFF"
+        android:text="put in number"
+        />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id ="@+id/RSSI_toggle_button"
+        android:onClick="RSSI_click"
+        android:text="Set Rssi Value"/>-->
+
+
+
+
+    </LinearLayout>
+
+
+
+</LinearLayout>
