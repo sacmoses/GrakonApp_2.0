@@ -45,7 +45,7 @@ import java.util.UUID;
 public class Chat extends Activity {
 
 	enum DataBytes {
-        ZONE, RED, GREEN, BLUE, FUNCTION, RESUME
+        ZONE, RED, GREEN, BLUE, FUNCTION
     }
     private final static int NUM_TOGGLE_BUTTONS = 4;
 	private int RSSI_THRESHOLD = -50;
@@ -71,11 +71,13 @@ public class Chat extends Activity {
     boolean firstConnection = false;
 
 
-    private byte SIS_FLAG = (byte)0x81;
-    private byte DEMO_FLAG = (byte)0x82;
-    private byte PWR_FLAG = (byte)0x84;
+    private byte PWR_FLAG = (byte)0x80;
+    private byte SIS_FLAG = (byte)0x40;
+    private byte DEMO_FLAG = (byte)0x20;
+    private byte UPD_FLAG = (byte)0x10;
     private byte NO_FLAG = (byte)0x00;
-    private byte RESUME_FLAG = (byte)0x01;
+    private byte ON_FLAG = (byte)0x01;
+    private byte OFF_FLAG = (byte)0x00;
     byte[] datagram = { NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG};
 
 
@@ -593,8 +595,7 @@ public class Chat extends Activity {
         Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
         SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
         SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
-        datagram[DataBytes.FUNCTION.ordinal()] = DEMO_FLAG;
-        datagram[DataBytes.RESUME.ordinal()] = RESUME_FLAG;
+        datagram[DataBytes.FUNCTION.ordinal()] = (byte)(SIS_FLAG | ON_FLAG);
 //        byte[] data = { 0x01 , 0x02};
         if(((ToggleButton) view).isChecked()) {
             modeToggleButtons[3] = true;
@@ -626,7 +627,7 @@ public class Chat extends Activity {
             s2.setEnabled(true);
             ambient_edit.setEnabled(true);
 
-            datagram[DataBytes.FUNCTION.ordinal()] = NO_FLAG;
+            datagram[DataBytes.FUNCTION.ordinal()] = (byte)(SIS_FLAG | OFF_FLAG);
             BluetoothGatt gatt;
             BluetoothGattCharacteristic c2;
             gatt = mBleWrapper.getGatt();
@@ -680,20 +681,21 @@ public class Chat extends Activity {
     //	(more info on the packets contained in the Project Report. Section 4.2.2)
     {
         // {
-        byte[] data = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+//        byte[] data = { 0x00, 0x00, 0x00, 0x00, 0x00};
         if(modeToggleButtons[0]) {
-            data[1] = (byte) modes[activeAmbientMode].objLampL.getR();
-            data[2] = (byte) modes[activeAmbientMode].objLampL.getG();
-            data[3] = (byte) modes[activeAmbientMode].objLampL.getB();
+            datagram[DataBytes.FUNCTION.ordinal()] = UPD_FLAG;
+            /*Send Zone 1*/
+            datagram[DataBytes.ZONE.ordinal()] = (byte)0x00;
+            datagram[DataBytes.RED.ordinal()] = (byte) modes[activeAmbientMode].objLampL.getR();
+            datagram[DataBytes.GREEN.ordinal()] = (byte) modes[activeAmbientMode].objLampL.getG();
+            datagram[DataBytes.BLUE.ordinal()] = (byte) modes[activeAmbientMode].objLampL.getB();
 
-            data[4] = (byte) modes[activeAmbientMode].objLampR.getR();
-            data[5] = (byte) modes[activeAmbientMode].objLampR.getG();
-            data[6] = (byte) modes[activeAmbientMode].objLampR.getB();
+
         }
-        if(modeToggleButtons[1])
-            data[7] = (byte) overhead_intensity;
-        if(modeToggleButtons[2])
-            data[8] = (byte) reading_lamp_intensity;
+//        if(modeToggleButtons[1])
+//            data[7] = (byte) overhead_intensity;
+//        if(modeToggleButtons[2])
+//            data[8] = (byte) reading_lamp_intensity;
 
 
         BluetoothGatt gatt;
@@ -701,11 +703,25 @@ public class Chat extends Activity {
         gatt = mBleWrapper.getGatt();
         try {
             c2 = gatt.getService(UUID_RBL).getCharacteristic(UUID_TX);
-            mBleWrapper.writeDataToCharacteristic(c2, data);
+            mBleWrapper.writeDataToCharacteristic(c2, datagram);
         }
 
         catch( NullPointerException e ) {  }
 
+        /*Send Zone 2*/
+        datagram[DataBytes.ZONE.ordinal()] = (byte)0x01;
+        datagram[DataBytes.RED.ordinal()] = (byte) modes[activeAmbientMode].objLampR.getR();
+        datagram[DataBytes.GREEN.ordinal()] = (byte) modes[activeAmbientMode].objLampR.getG();
+        datagram[DataBytes.BLUE.ordinal()] = (byte) modes[activeAmbientMode].objLampR.getB();
+        BluetoothGatt gatt2;
+        BluetoothGattCharacteristic c3;
+        gatt2 = mBleWrapper.getGatt();
+        try {
+            c3 = gatt2.getService(UUID_RBL).getCharacteristic(UUID_TX);
+            mBleWrapper.writeDataToCharacteristic(c3, datagram);
+        }
+
+        catch( NullPointerException e ) {  }
     }
 
     public void notifyArduino() // This function forms the acknowledgement packets sent by the phone to the lighting controller
@@ -721,7 +737,7 @@ public class Chat extends Activity {
             }
             c2 = gatt.getService(UUID_RBL).getCharacteristic(UUID_TX);
 
-            mBleWrapper.writeDataToCharacteristic(c2, data);
+            mBleWrapper.writeDataToCharacteristic(c2, datagram);
 
         } catch (NullPointerException e) {
             Log.d("NULLPOINT", "Avoided exception w/ try catch block");
