@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,11 +45,16 @@ import java.util.UUID;
 
 public class Chat extends Activity {
 
-	enum DataBytes {
-        ZONE, RED, GREEN, BLUE, FUNCTION
-    }
+//	enum DataBytes {
+//        ZONE, RED, GREEN, BLUE, FUNCTION
+//    }
+    private final static int ZONE = 0;
+    private final static int RED = 1;
+    private final static int GREEN = 2;
+    private final static int BLUE = 3;
+    private final static int FUNCTION = 4;
     private final static int NUM_TOGGLE_BUTTONS = 4;
-	private int RSSI_THRESHOLD = -50;
+	private int RSSI_THRESHOLD = -105;
     private static final int NUM_MODES = 5;
 	private TextView tv = null;
     private Dialog mDialog;
@@ -88,9 +94,9 @@ public class Chat extends Activity {
     private int reading_lamp_intensity;
 
     private static final UUID
-            UUID_RBL = UUID.fromString("000000ef-0000-1000-8000-00805f9b34fb"),
-            UUID_TX = UUID.fromString("00000000-0000-1000-8000-00805f9b34fb"),
-            UUID_RX = UUID.fromString("713d0002-503e-4c75-ba94-3148f18d941e");
+            UUID_GRAKON_SERVICE = UUID.fromString("000000ef-0000-1000-8000-00805f9b34fb"),
+            UUID_GRAKON_CHAR_TX = UUID.fromString("00000000-0000-1000-8000-00805f9b34fb"),
+            UUID_GRAKON_CHAR_RX = UUID.fromString("713d0002-503e-4c75-ba94-3148f18d941e");
 
 
     PropertyChangeListener listener = new PropertyChangeListener() { // Listener
@@ -221,11 +227,19 @@ public class Chat extends Activity {
         }
         modes[0].objLampR.setMasterColor(-16776961); // Setting default colors for all the modes
         modes[0].objLampL.setMasterColor(-16776961); // The Default color of Relax is Blue
+        modes[0].objLamp2.setMasterColor(-16776961);
+        modes[0].objLamp3.setMasterColor(-16776961);
+
         modes[1].objLampR.setMasterColor( -65536); // The Default color of Night Drive is Red
         modes[1].objLampL.setMasterColor( -65536); //The Default color of Custom Modes is White
+        modes[1].objLamp2.setMasterColor( -65536);
+        modes[1].objLamp3.setMasterColor( -65536);
+
         for(int k = 2; k< NUM_MODES; k++){
             modes[k].objLampL.setMasterColor(-1);
             modes[k].objLampR.setMasterColor(-1);
+            modes[k].objLamp2.setMasterColor(-1);
+            modes[k].objLamp3.setMasterColor(-1);
         }
 
         for(int j= 0; j < NUM_MODES; j++) // Checks to see if user has previously set colors of ambient profiles and changes the color settings accordingly
@@ -234,6 +248,10 @@ public class Chat extends Activity {
                 modes[j].objLampL.setMasterColor(ReadModeObject(j,"L"));
             if(ReadModeObject(j,"R") != 0)
                 modes[j].objLampR.setMasterColor(ReadModeObject(j,"R"));
+            if(ReadModeObject(j,"2") != 0)
+                modes[j].objLamp2.setMasterColor(ReadModeObject(j,"2"));
+            if(ReadModeObject(j,"3") != 0)
+                modes[j].objLamp3.setMasterColor(ReadModeObject(j,"3"));
         }
 
         // Initialize toggle buttons
@@ -402,7 +420,6 @@ public class Chat extends Activity {
     public void setRSSI(int rssi) // Continuously averages RSSI value
     {
         lastKnownRssi = rssi;
-
         runOnUiThread(new Runnable() {
            @Override
             public void run() {
@@ -580,11 +597,63 @@ public class Chat extends Activity {
     }
 
     public void reading_toggle_click(View view) {
-        if(((ToggleButton) view).isChecked())
+        ToggleButton ambient_toggle = (ToggleButton) findViewById(R.id.color_select_toggle_button);
+        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
+        ToggleButton demo_toggle = (ToggleButton) findViewById(R.id.demo_toggle_button);
+        Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
+        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
+        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
+        if(((ToggleButton) view).isChecked()) {
             modeToggleButtons[2] = true;
-        else
+
+            /* Disable the other toggle buttons */
+            ambient_toggle.setEnabled(false);
+            overhead_toggle.setEnabled(false);
+            demo_toggle.setEnabled(false);
+            s1.setEnabled(false);
+            s2.setEnabled(false);
+            ambient_edit.setEnabled(false);
+
+            /* Turn on Sound Impact Sensor */
+            datagram[FUNCTION] = (byte)(SIS_FLAG | ON_FLAG);
+            /* Send the datagram */
+            BluetoothGatt gatt;
+            BluetoothGattCharacteristic c2;
+            gatt = mBleWrapper.getGatt();
+            try {
+                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+                mBleWrapper.writeDataToCharacteristic(c2, datagram);
+            }
+
+            catch( NullPointerException e ) {  }
+        }
+        else{
             modeToggleButtons[2] = false;
-        sendLightData();
+
+            /* Enable the other toggle buttons */
+            ambient_toggle.setEnabled(true);
+            overhead_toggle.setEnabled(true);
+            demo_toggle.setEnabled(true);
+            s1.setEnabled(true);
+            s2.setEnabled(true);
+            ambient_edit.setEnabled(true);
+
+            /* Turn off Sound Impact Sensor */
+            datagram[FUNCTION] = (byte)(SIS_FLAG | OFF_FLAG);
+            /* Send the datagram */
+            BluetoothGatt gatt;
+            BluetoothGattCharacteristic c2;
+            gatt = mBleWrapper.getGatt();
+            try {
+                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+                mBleWrapper.writeDataToCharacteristic(c2, datagram);
+            }
+
+            catch( NullPointerException e ) {  }
+
+            /* Turn the ambient lights back on */
+            sendLightData();
+        }
     }
 
     public void demo_click(View view) // If the user hits the demo button, this code "greys" out the rest of the buttons and sends a special signal to Lighting controller
@@ -595,10 +664,11 @@ public class Chat extends Activity {
         Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
         SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
         SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
-        datagram[DataBytes.FUNCTION.ordinal()] = (byte)(SIS_FLAG | ON_FLAG);
+
 //        byte[] data = { 0x01 , 0x02};
         if(((ToggleButton) view).isChecked()) {
             modeToggleButtons[3] = true;
+
 
             ambient_toggle.setEnabled(false);
             overhead_toggle.setEnabled(false);
@@ -607,12 +677,13 @@ public class Chat extends Activity {
             s2.setEnabled(false);
             ambient_edit.setEnabled(false);
 
-            //data[1] = (byte) 1;
+            /* Turn the Demo on */
+            datagram[FUNCTION] = (byte)(DEMO_FLAG | ON_FLAG);
             BluetoothGatt gatt;
             BluetoothGattCharacteristic c2;
             gatt = mBleWrapper.getGatt();
             try {
-                c2 = gatt.getService(UUID_RBL).getCharacteristic(UUID_TX);
+                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
                 mBleWrapper.writeDataToCharacteristic(c2, datagram);
             }
 
@@ -627,19 +698,22 @@ public class Chat extends Activity {
             s2.setEnabled(true);
             ambient_edit.setEnabled(true);
 
-            datagram[DataBytes.FUNCTION.ordinal()] = (byte)(SIS_FLAG | OFF_FLAG);
+            /* Turn the Demo off */
+            datagram[FUNCTION] = (byte)(DEMO_FLAG | OFF_FLAG);
             BluetoothGatt gatt;
             BluetoothGattCharacteristic c2;
             gatt = mBleWrapper.getGatt();
             try {
-                c2 = gatt.getService(UUID_RBL).getCharacteristic(UUID_TX);
+                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
                 mBleWrapper.writeDataToCharacteristic(c2, datagram);
             }
 
             catch( NullPointerException e ) {  }
 
+            /* Turn the ambient lights back on */
             sendLightData();
         }
+
 
 
 
@@ -662,7 +736,7 @@ public class Chat extends Activity {
         }
     }
 
-    public void set_color_left(View view) {
+    public void set_zone_0(View view) {
         modeToggleButtons[0] = true;
         modes[activeAmbientMode].objLampL.setMasterColor(colorPicker.getColor());
         saveModeObject(activeAmbientMode); // Save color data into file
@@ -670,9 +744,23 @@ public class Chat extends Activity {
 
     }
 
-    public void set_color_right(View view) {
+    public void set_zone_1(View view) {
         modeToggleButtons[0] = true;
         modes[activeAmbientMode].objLampR.setMasterColor(colorPicker.getColor());
+        saveModeObject(activeAmbientMode); // Save color data into file
+        sendLightData();
+    }
+    public void set_zone_2(View view) {
+        modeToggleButtons[0] = true;
+        modes[activeAmbientMode].objLamp2.setMasterColor(colorPicker.getColor());
+        saveModeObject(activeAmbientMode); // Save color data into file
+        sendLightData();
+
+    }
+
+    public void set_zone_3(View view) {
+        modeToggleButtons[0] = true;
+        modes[activeAmbientMode].objLamp3.setMasterColor(colorPicker.getColor());
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();
     }
@@ -682,46 +770,55 @@ public class Chat extends Activity {
     {
         // {
 //        byte[] data = { 0x00, 0x00, 0x00, 0x00, 0x00};
+        ArrayList<lamp> lampList = new ArrayList<lamp>();
+        lampList.add(modes[activeAmbientMode].objLampL);
+        lampList.add(modes[activeAmbientMode].objLampR);
+        lampList.add(modes[activeAmbientMode].objLamp2);
+        lampList.add(modes[activeAmbientMode].objLamp3);
+
+        /* If the Ambient light is checked on - Change each lamp/Zone */
         if(modeToggleButtons[0]) {
-            datagram[DataBytes.FUNCTION.ordinal()] = UPD_FLAG;
-            /*Send Zone 1*/
-            datagram[DataBytes.ZONE.ordinal()] = (byte)0x00;
-            datagram[DataBytes.RED.ordinal()] = (byte) modes[activeAmbientMode].objLampL.getR();
-            datagram[DataBytes.GREEN.ordinal()] = (byte) modes[activeAmbientMode].objLampL.getG();
-            datagram[DataBytes.BLUE.ordinal()] = (byte) modes[activeAmbientMode].objLampL.getB();
 
+            /*We're updating, so check the Update Flag*/
+            datagram[FUNCTION] = UPD_FLAG;
 
+            /* For every lamp */
+            for(int i = 0; i < lampList.size(); i++){
+                datagram[ZONE] = (byte)i;
+                datagram[RED] = (byte) lampList.get(i).getR();
+                datagram[GREEN] = (byte) lampList.get(i).getG();
+                datagram[BLUE] = (byte) lampList.get(i).getB();
+                BluetoothGatt gatt;
+                BluetoothGattCharacteristic c2;
+                gatt = mBleWrapper.getGatt();
+                try {
+                    c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+                    mBleWrapper.writeDataToCharacteristic(c2, datagram);
+                }
+                catch( NullPointerException e ) {  }
+            }
         }
+
+        /* Otherwise, turn off the lights */
+        else if(!modeToggleButtons[0])
+             datagram[RED] = datagram[GREEN] = datagram[BLUE] = NO_FLAG;
+
+            for(int i = 0; i < lampList.size(); i++){
+                datagram[ZONE] = (byte)i;
+                BluetoothGatt gatt;
+                BluetoothGattCharacteristic c2;
+                gatt = mBleWrapper.getGatt();
+                try {
+                    c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+                    mBleWrapper.writeDataToCharacteristic(c2, datagram);
+                }
+                catch( NullPointerException e ) {  }
+            }
+
 //        if(modeToggleButtons[1])
 //            data[7] = (byte) overhead_intensity;
 //        if(modeToggleButtons[2])
 //            data[8] = (byte) reading_lamp_intensity;
-
-
-        BluetoothGatt gatt;
-        BluetoothGattCharacteristic c2;
-        gatt = mBleWrapper.getGatt();
-        try {
-            c2 = gatt.getService(UUID_RBL).getCharacteristic(UUID_TX);
-            mBleWrapper.writeDataToCharacteristic(c2, datagram);
-        }
-
-        catch( NullPointerException e ) {  }
-
-        /*Send Zone 2*/
-        datagram[DataBytes.ZONE.ordinal()] = (byte)0x01;
-        datagram[DataBytes.RED.ordinal()] = (byte) modes[activeAmbientMode].objLampR.getR();
-        datagram[DataBytes.GREEN.ordinal()] = (byte) modes[activeAmbientMode].objLampR.getG();
-        datagram[DataBytes.BLUE.ordinal()] = (byte) modes[activeAmbientMode].objLampR.getB();
-        BluetoothGatt gatt2;
-        BluetoothGattCharacteristic c3;
-        gatt2 = mBleWrapper.getGatt();
-        try {
-            c3 = gatt2.getService(UUID_RBL).getCharacteristic(UUID_TX);
-            mBleWrapper.writeDataToCharacteristic(c3, datagram);
-        }
-
-        catch( NullPointerException e ) {  }
     }
 
     public void notifyArduino() // This function forms the acknowledgement packets sent by the phone to the lighting controller
@@ -735,7 +832,7 @@ public class Chat extends Activity {
             if (gatt == null) {
                 Log.d("NULLPOINT", "GATT is NULL");
             }
-            c2 = gatt.getService(UUID_RBL).getCharacteristic(UUID_TX);
+            c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
 
             mBleWrapper.writeDataToCharacteristic(c2, datagram);
 
@@ -806,6 +903,28 @@ public class Chat extends Activity {
             FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
             OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
             outputwriter.write(Integer.toString(modes[currentModeObject].objLampL.getMasterColor()));
+            outputwriter.close();
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+        filename = "ModeObject" +  Integer.toString(currentModeObject) + "2.txt";
+
+        try {
+            FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
+            OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
+            outputwriter.write(Integer.toString(modes[currentModeObject].objLamp2.getMasterColor()));
+            outputwriter.close();
+
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+        filename = "ModeObject" +  Integer.toString(currentModeObject) + "3.txt";
+
+        try {
+            FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
+            OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
+            outputwriter.write(Integer.toString(modes[currentModeObject].objLamp3.getMasterColor()));
             outputwriter.close();
 
         }catch(Exception e) {

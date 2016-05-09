@@ -24,9 +24,10 @@
         android:background="#333" />
     
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="386dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:weightSum="1">
 
 
 <!--        <Button
@@ -44,28 +45,62 @@
             android:layout_marginRight="20dp"
             />-->
         <Button
-            android:layout_width="150dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Set Left"
-            android:textSize="30sp"
+            android:text="Zone 0"
+            android:textSize="28sp"
             android:background="@drawable/modebutton_non_active1"
-            android:onClick="set_color_left"
+            android:onClick="set_zone_0"
+            android:clickable="true"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_weight=".25" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Zone 1"
+            android:textSize="28sp"
+            android:background="@drawable/modebutton_non_active1"
+            android:onClick="set_zone_1"
             android:clickable="true"
             android:paddingLeft="5dp"
             android:paddingRight="5dp"
             android:layout_marginRight="10dp"
-            android:layout_marginBottom="10dp"/>
+            android:layout_marginBottom="10dp"
+            android:layout_weight=".25" />
 
         <Button
-            android:layout_width="150dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Set Right"
-            android:textSize="30sp"
+            android:text="Zone 2"
+            android:textSize="28sp"
             android:background="@drawable/modebutton_non_active1"
-            android:onClick="set_color_right"
+            android:onClick="set_zone_2"
             android:clickable="true"
             android:paddingLeft="5dp"
-            android:paddingRight="5dp"/>
+            android:paddingRight="5dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:enabled="true"
+            android:layout_weight=".25" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Zone 3"
+            android:textSize="28sp"
+            android:background="@drawable/modebutton_non_active1"
+            android:onClick="set_zone_3"
+            android:clickable="true"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_weight=".25" />
 
 
         </LinearLayout>
