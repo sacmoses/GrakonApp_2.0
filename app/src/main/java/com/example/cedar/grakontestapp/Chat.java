@@ -52,7 +52,7 @@ public class Chat extends Activity {
     private final static int RED = 1;
     private final static int GREEN = 2;
     private final static int BLUE = 3;
-    private final static int FUNCTION = 4;
+    private final static int FUNCTION = 12;
     private final static int NUM_TOGGLE_BUTTONS = 4;
 	private int RSSI_THRESHOLD = -105;
     private static final int NUM_MODES = 5;
@@ -84,7 +84,7 @@ public class Chat extends Activity {
     private byte NO_FLAG = (byte)0x00;
     private byte ON_FLAG = (byte)0x01;
     private byte OFF_FLAG = (byte)0x00;
-    byte[] datagram = { NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG};
+    byte[] datagram = { NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG,NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG};
 
 
 
@@ -776,56 +776,55 @@ public class Chat extends Activity {
         lampList.add(modes[activeAmbientMode].objLamp2);
         lampList.add(modes[activeAmbientMode].objLamp3);
 
+        datagram[FUNCTION] = (byte)(PWR_FLAG | ON_FLAG);
+        /* Send data to BLE peripheral */
+        BluetoothGatt gatt;
+        BluetoothGattCharacteristic c2;
+        gatt = mBleWrapper.getGatt();
+        try {
+            c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+            mBleWrapper.writeDataToCharacteristic(c2, datagram);
+        }
+        catch( NullPointerException e ) {  }
+
+        /*We're updating, so check the Update Flag*/
+        datagram[FUNCTION] = UPD_FLAG;
+
         /* If the Ambient light is checked on - Change each lamp/Zone */
         if(modeToggleButtons[0]) {
-
-            /*We're updating, so check the Update Flag*/
-            datagram[FUNCTION] = UPD_FLAG;
-
-            /* For every lamp */
+            /* For every lamp assign the new data to datagram */
+            int j = 0;
             for(int i = 0; i < lampList.size(); i++){
-                datagram[ZONE] = (byte)i;
-                datagram[RED] = (byte) lampList.get(i).getR();
-                datagram[GREEN] = (byte) lampList.get(i).getG();
-                datagram[BLUE] = (byte) lampList.get(i).getB();
-                BluetoothGatt gatt;
-                BluetoothGattCharacteristic c2;
-                gatt = mBleWrapper.getGatt();
-                try {
-                    c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-                    mBleWrapper.writeDataToCharacteristic(c2, datagram);
-                }
-                catch( NullPointerException e ) {  }
+                datagram[j++] = (byte) lampList.get(i).getR();
+                datagram[j++] = (byte) lampList.get(i).getG();
+                datagram[j++] = (byte) lampList.get(i).getB();
             }
         }
-
         /* Otherwise, turn off the lights */
-        else if(!modeToggleButtons[0])
-             datagram[RED] = datagram[GREEN] = datagram[BLUE] = NO_FLAG;
+        else if(!modeToggleButtons[0]) {
+            datagram[FUNCTION] = (byte)(PWR_FLAG | NO_FLAG);
+//            for (int i = 0; i < FUNCTION; i++) {
+//                datagram[i] = NO_FLAG;
+//            }
+        }
 
-            for(int i = 0; i < lampList.size(); i++){
-                datagram[ZONE] = (byte)i;
-                BluetoothGatt gatt;
-                BluetoothGattCharacteristic c2;
-                gatt = mBleWrapper.getGatt();
-                try {
-                    c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-                    mBleWrapper.writeDataToCharacteristic(c2, datagram);
-                }
-                catch( NullPointerException e ) {  }
-            }
+        /* Send data to BLE peripheral */
+//        BluetoothGatt gatmt;
+//        BluetoothGattCharacteristic c2;
+        gatt = mBleWrapper.getGatt();
+        try {
+            c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+            mBleWrapper.writeDataToCharacteristic(c2, datagram);
+        }
+        catch( NullPointerException e ) {  }
 
-//        if(modeToggleButtons[1])
-//            data[7] = (byte) overhead_intensity;
-//        if(modeToggleButtons[2])
-//            data[8] = (byte) reading_lamp_intensity;
     }
 
     public void notifyArduino() // This function forms the acknowledgement packets sent by the phone to the lighting controller
     // See section 4.2.2 of project report for more info
     {
         try {
-            byte[] data = {0x00};
+//            byte[] data = {0x00};
             BluetoothGatt gatt;
             BluetoothGattCharacteristic c2;
             gatt = mBleWrapper.getGatt();
