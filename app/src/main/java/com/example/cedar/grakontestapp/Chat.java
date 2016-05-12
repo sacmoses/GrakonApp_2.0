@@ -20,7 +20,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.SeekBar;
+//import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,20 +52,23 @@ public class Chat extends Activity {
     private final static int RED = 1;
     private final static int GREEN = 2;
     private final static int BLUE = 3;
+    private final static int AMBIENT = 0;
+    private final static int SOUND_SENSOR = 1;
+    private final static int DEMO = 2;
     private final static int FUNCTION = 12;
-    private final static int NUM_TOGGLE_BUTTONS = 4;
+    private final static int NUM_TOGGLE_BUTTONS = 3;
 	private int RSSI_THRESHOLD = -105;
-    private static final int NUM_MODES = 5;
+    private static final int NUM_MODES = 7;
 	private TextView tv = null;
     private Dialog mDialog;
-    private SeekBar overhead_seekbar;
-    private SeekBar reading_seekbar;
+//    private SeekBar overhead_seekbar;
+//    private SeekBar reading_seekbar;
 	private int activeAmbientMode;
     private boolean inColorSeclector = false;
     private modeObj[] modes; // SAVE ME
     private ColorPicker colorPicker;
     private String[] AmbientModes = {"Relax","Night Drive","Custom 1"
-            ,"Custom 2","Custom 3"}; // SAME ME
+            ,"Custom 2","Custom 3","Demo","Sound Sensor"}; // SAME ME
     private CustomOnItemSelectedListener myListener;
     private BleWrapper mBleWrapper = null;
     private int lastKnownRssi = 0;
@@ -90,8 +93,8 @@ public class Chat extends Activity {
 
     private boolean modeToggleButtons[];
     // Lamp States
-    private int overhead_intensity;
-    private int reading_lamp_intensity;
+//    private int overhead_intensity;
+//    private int reading_lamp_intensity;
 
     private static final UUID
             UUID_GRAKON_SERVICE = UUID.fromString("000000ef-0000-1000-8000-00805f9b34fb"),
@@ -143,6 +146,7 @@ public class Chat extends Activity {
                     }
                     else if(status)
                         Log.d("DEBUG: ","Connected to "+device.getName());
+//                    firstConnection = true;
                 }
 
             }
@@ -225,29 +229,29 @@ public class Chat extends Activity {
         for(int i = 0; i < NUM_MODES; i++){ //Creates the ambient profiles
             modes[i] = new modeObj(i);
         }
-        modes[0].objLampR.setMasterColor(-16776961); // Setting default colors for all the modes
-        modes[0].objLampL.setMasterColor(-16776961); // The Default color of Relax is Blue
+        modes[0].objLamp0.setMasterColor(-16776961); // Setting default colors for all the modes
+        modes[0].objLamp1.setMasterColor(-16776961); // The Default color of Relax is Blue
         modes[0].objLamp2.setMasterColor(-16776961);
         modes[0].objLamp3.setMasterColor(-16776961);
 
-        modes[1].objLampR.setMasterColor( -65536); // The Default color of Night Drive is Red
-        modes[1].objLampL.setMasterColor( -65536); //The Default color of Custom Modes is White
+        modes[1].objLamp1.setMasterColor( -65536); // The Default color of Night Drive is Red
+        modes[1].objLamp0.setMasterColor( -65536); //The Default color of Custom Modes is White
         modes[1].objLamp2.setMasterColor( -65536);
         modes[1].objLamp3.setMasterColor( -65536);
 
         for(int k = 2; k< NUM_MODES; k++){
-            modes[k].objLampL.setMasterColor(-1);
-            modes[k].objLampR.setMasterColor(-1);
+            modes[k].objLamp0.setMasterColor(-1);
+            modes[k].objLamp1.setMasterColor(-1);
             modes[k].objLamp2.setMasterColor(-1);
             modes[k].objLamp3.setMasterColor(-1);
         }
 
         for(int j= 0; j < NUM_MODES; j++) // Checks to see if user has previously set colors of ambient profiles and changes the color settings accordingly
         {
-            if(ReadModeObject(j,"L") != 0)
-                modes[j].objLampL.setMasterColor(ReadModeObject(j,"L"));
-            if(ReadModeObject(j,"R") != 0)
-                modes[j].objLampR.setMasterColor(ReadModeObject(j,"R"));
+            if(ReadModeObject(j,"0") != 0)
+                modes[j].objLamp0.setMasterColor(ReadModeObject(j,"0"));
+            if(ReadModeObject(j,"1") != 0)
+                modes[j].objLamp1.setMasterColor(ReadModeObject(j,"1"));
             if(ReadModeObject(j,"2") != 0)
                 modes[j].objLamp2.setMasterColor(ReadModeObject(j,"2"));
             if(ReadModeObject(j,"3") != 0)
@@ -265,8 +269,8 @@ public class Chat extends Activity {
 
 
         // Initialize seek bar
-        overhead_intensity = 120;
-        reading_lamp_intensity = 120;
+//        overhead_intensity = 120;
+//        reading_lamp_intensity = 120;
 
         modes_activity();
         Scantime();
@@ -386,14 +390,14 @@ public class Chat extends Activity {
         if(!inrange) {
             if (rssi > RSSI_THRESHOLD) {
                 inrange = true;
-                modeToggleButtons[0] = true;
-                modeToggleButtons[1] = true;
+                modeToggleButtons[AMBIENT] = true;
+//                modeToggleButtons[1] = true;
                 sendLightData();
                 if(!inColorSeclector){
                     ToggleButton t1 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
-                    ToggleButton t2 = (ToggleButton) findViewById(R.id.overhead_toggle_button);
+//                    ToggleButton t2 = (ToggleButton) findViewById(R.id.overhead_toggle_button);
                     t1.setChecked(true);
-                    t2.setChecked(true);
+//                    t2.setChecked(true);
                 }
             }
         }
@@ -491,15 +495,15 @@ public class Chat extends Activity {
         spinner.setOnItemSelectedListener(myListener);
 
         // Initialize  overhead and reading scroll bars
-        overhead_seekbar = (SeekBar) findViewById(R.id.overhead_seekbar);
-        overhead_seekbar.setProgress((int) (overhead_intensity/2.55) );
-        reading_seekbar = (SeekBar) findViewById(R.id.reading_seekbar);
-        reading_seekbar.setProgress((int) (reading_lamp_intensity/2.55));
+//        overhead_seekbar = (SeekBar) findViewById(R.id.overhead_seekbar);
+//        overhead_seekbar.setProgress((int) (overhead_intensity/2.55) );
+//        reading_seekbar = (SeekBar) findViewById(R.id.reading_seekbar);
+//        reading_seekbar.setProgress((int) (reading_lamp_intensity/2.55));
 
 
 
         //Initialize on/off buttons
-        ToggleButton t0 = (ToggleButton)findViewById(R.id.color_select_toggle_button);
+        /*ToggleButton t0 = (ToggleButton)findViewById(R.id.color_select_toggle_button);
         ToggleButton t1 = (ToggleButton)findViewById(R.id.overhead_toggle_button);
         ToggleButton t2 = (ToggleButton)findViewById(R.id.reading_toggle_button);
         ToggleButton t3 = (ToggleButton)findViewById(R.id.demo_toggle_button);
@@ -507,47 +511,55 @@ public class Chat extends Activity {
         t0.setChecked(modeToggleButtons[0]);
         t1.setChecked(modeToggleButtons[1]);
         t2.setChecked(modeToggleButtons[2]);
-        t3.setChecked(modeToggleButtons[3]);
+        t3.setChecked(modeToggleButtons[3]);*/
+        //Initialize on/off buttons
+        ToggleButton t0 = (ToggleButton)findViewById(R.id.color_select_toggle_button);
+        ToggleButton t1 = (ToggleButton)findViewById(R.id.reading_toggle_button);
+        ToggleButton t2 = (ToggleButton)findViewById(R.id.demo_toggle_button);
+
+        t0.setChecked(modeToggleButtons[AMBIENT]);
+        t1.setChecked(modeToggleButtons[SOUND_SENSOR]);
+        t2.setChecked(modeToggleButtons[DEMO]);
 
         rssi_value = (TextView) findViewById(R.id.rssi_value);
         connect_disconnect_textView = (TextView) findViewById(R.id.connect_disconnect_textView);
 
         changeConnectedText(deviceConnected);
 
-        overhead_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() // Instantly sends the data as the user adjusts scroll bars
-        {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean bool) {
-                overhead_intensity = (int) (progressValue * 2.55);
-                // Send live value to arduino
-                if(modeToggleButtons[1])
-                    sendLightData();
-            }
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {           }
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {            }
-        });
-        reading_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean bool) {
-                reading_lamp_intensity = (int) (progressValue * 2.55);
-                // Send live value to arduino
-                if(modeToggleButtons[2])
-                    sendLightData();
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                //Toast.makeText(getApplicationContext(), "Started tracking seekbar", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+//        overhead_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() // Instantly sends the data as the user adjusts scroll bars
+//        {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean bool) {
+//                overhead_intensity = (int) (progressValue * 2.55);
+//                // Send live value to arduino
+//                if(modeToggleButtons[1])
+//                    sendLightData();
+//            }
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {           }
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {            }
+//        });
+//        reading_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean bool) {
+//                reading_lamp_intensity = (int) (progressValue * 2.55);
+//                // Send live value to arduino
+//                if(modeToggleButtons[2])
+//                    sendLightData();
+//
+//            }
+//
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//                //Toast.makeText(getApplicationContext(), "Started tracking seekbar", Toast.LENGTH_SHORT).show();
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//        });
 
     }
 
@@ -568,7 +580,7 @@ public class Chat extends Activity {
         inColorSeclector = true;
         colorPicker = (ColorPicker) findViewById(R.id.colorPicker);
         // Always initialize color wheel to left ambient lamp.
-        colorPicker.setColor(modes[activeAmbientMode].objLampL.getMasterColor());
+        colorPicker.setColor(modes[activeAmbientMode].objLamp0.getMasterColor());
         //saveModeObject(activeAmbientMode);
         EditText text = (EditText) findViewById(R.id.current_mode_edit_text);
         text.setText(AmbientModes[activeAmbientMode]);
@@ -582,36 +594,36 @@ public class Chat extends Activity {
     // ON/OFF BUTTONS
     public void ambient_toggle_click(View view) {
         if(((ToggleButton) view).isChecked())
-            modeToggleButtons[0] = true;
+            modeToggleButtons[AMBIENT] = true;
         else
-            modeToggleButtons[0] = false;
+            modeToggleButtons[AMBIENT] = false;
         sendLightData();
     }
 
-    public void overhead_toggle_click(View view) {
-        if(((ToggleButton) view).isChecked())
-            modeToggleButtons[1] = true;
-        else
-            modeToggleButtons[1] = false;
-        sendLightData();
-    }
+//    public void overhead_toggle_click(View view) {
+//        if(((ToggleButton) view).isChecked())
+//            modeToggleButtons[1] = true;
+//        else
+//            modeToggleButtons[1] = false;
+//        sendLightData();
+//    }
 
-    public void reading_toggle_click(View view) {
+    public void sound_sensor_click(View view) {
         ToggleButton ambient_toggle = (ToggleButton) findViewById(R.id.color_select_toggle_button);
-        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
+//        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
         ToggleButton demo_toggle = (ToggleButton) findViewById(R.id.demo_toggle_button);
         Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
-        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
-        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
+//        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
+//        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
         if(((ToggleButton) view).isChecked()) {
-            modeToggleButtons[2] = true;
+            modeToggleButtons[SOUND_SENSOR] = true;
 
             /* Disable the other toggle buttons */
             ambient_toggle.setEnabled(false);
-            overhead_toggle.setEnabled(false);
+//            overhead_toggle.setEnabled(false);
             demo_toggle.setEnabled(false);
-            s1.setEnabled(false);
-            s2.setEnabled(false);
+//            s1.setEnabled(false);
+//            s2.setEnabled(false);
             ambient_edit.setEnabled(false);
 
             /* Turn on Sound Impact Sensor */
@@ -628,14 +640,14 @@ public class Chat extends Activity {
             catch( NullPointerException e ) {  }
         }
         else{
-            modeToggleButtons[2] = false;
+            modeToggleButtons[SOUND_SENSOR] = false;
 
             /* Enable the other toggle buttons */
             ambient_toggle.setEnabled(true);
-            overhead_toggle.setEnabled(true);
+//            overhead_toggle.setEnabled(true);
             demo_toggle.setEnabled(true);
-            s1.setEnabled(true);
-            s2.setEnabled(true);
+//            s1.setEnabled(true);
+//            s2.setEnabled(true);
             ambient_edit.setEnabled(true);
 
             /* Turn off Sound Impact Sensor */
@@ -659,22 +671,22 @@ public class Chat extends Activity {
     public void demo_click(View view) // If the user hits the demo button, this code "greys" out the rest of the buttons and sends a special signal to Lighting controller
     {
         ToggleButton ambient_toggle = (ToggleButton) findViewById(R.id.color_select_toggle_button);
-        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
+//        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
         ToggleButton reading_toggle = (ToggleButton) findViewById(R.id.reading_toggle_button);
         Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
-        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
-        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
+//        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
+//        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
 
 //        byte[] data = { 0x01 , 0x02};
         if(((ToggleButton) view).isChecked()) {
-            modeToggleButtons[3] = true;
+            modeToggleButtons[DEMO] = true;
 
 
             ambient_toggle.setEnabled(false);
-            overhead_toggle.setEnabled(false);
+//            overhead_toggle.setEnabled(false);
             reading_toggle.setEnabled(false);
-            s1.setEnabled(false);
-            s2.setEnabled(false);
+//            s1.setEnabled(false);
+//            s2.setEnabled(false);
             ambient_edit.setEnabled(false);
 
             /* Turn the Demo on */
@@ -690,12 +702,12 @@ public class Chat extends Activity {
             catch( NullPointerException e ) {  }
 
         }else{
-            modeToggleButtons[3] = false;
+            modeToggleButtons[DEMO] = false;
             ambient_toggle.setEnabled(true);
-            overhead_toggle.setEnabled(true);
+//            overhead_toggle.setEnabled(true);
             reading_toggle.setEnabled(true);
-            s1.setEnabled(true);
-            s2.setEnabled(true);
+//            s1.setEnabled(true);
+//            s2.setEnabled(true);
             ambient_edit.setEnabled(true);
 
             /* Turn the Demo off */
@@ -737,21 +749,21 @@ public class Chat extends Activity {
     }
 
     public void set_zone_0(View view) {
-        modeToggleButtons[0] = true;
-        modes[activeAmbientMode].objLampL.setMasterColor(colorPicker.getColor());
+        modeToggleButtons[AMBIENT] = true;
+        modes[activeAmbientMode].objLamp0.setMasterColor(colorPicker.getColor());
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();
 
     }
 
     public void set_zone_1(View view) {
-        modeToggleButtons[0] = true;
-        modes[activeAmbientMode].objLampR.setMasterColor(colorPicker.getColor());
+        modeToggleButtons[AMBIENT] = true;
+        modes[activeAmbientMode].objLamp1.setMasterColor(colorPicker.getColor());
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();
     }
     public void set_zone_2(View view) {
-        modeToggleButtons[0] = true;
+        modeToggleButtons[AMBIENT] = true;
         modes[activeAmbientMode].objLamp2.setMasterColor(colorPicker.getColor());
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();
@@ -759,7 +771,7 @@ public class Chat extends Activity {
     }
 
     public void set_zone_3(View view) {
-        modeToggleButtons[0] = true;
+        modeToggleButtons[AMBIENT] = true;
         modes[activeAmbientMode].objLamp3.setMasterColor(colorPicker.getColor());
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();
@@ -771,8 +783,8 @@ public class Chat extends Activity {
         // {
 //        byte[] data = { 0x00, 0x00, 0x00, 0x00, 0x00};
         ArrayList<lamp> lampList = new ArrayList<lamp>();
-        lampList.add(modes[activeAmbientMode].objLampL);
-        lampList.add(modes[activeAmbientMode].objLampR);
+        lampList.add(modes[activeAmbientMode].objLamp0);
+        lampList.add(modes[activeAmbientMode].objLamp1);
         lampList.add(modes[activeAmbientMode].objLamp2);
         lampList.add(modes[activeAmbientMode].objLamp3);
 
@@ -791,7 +803,7 @@ public class Chat extends Activity {
         datagram[FUNCTION] = UPD_FLAG;
 
         /* If the Ambient light is checked on - Change each lamp/Zone */
-        if(modeToggleButtons[0]) {
+        if(modeToggleButtons[AMBIENT]) {
             /* For every lamp assign the new data to datagram */
             int j = 0;
             for(int i = 0; i < lampList.size(); i++){
@@ -801,7 +813,7 @@ public class Chat extends Activity {
             }
         }
         /* Otherwise, turn off the lights */
-        else if(!modeToggleButtons[0]) {
+        else if(!modeToggleButtons[AMBIENT]) {
             datagram[FUNCTION] = (byte)(PWR_FLAG | NO_FLAG);
 //            for (int i = 0; i < FUNCTION; i++) {
 //                datagram[i] = NO_FLAG;
@@ -885,30 +897,30 @@ public class Chat extends Activity {
     // converts the color, which is stored as an integer, and converts it to a string so it can be saved as a text file.
     {
         String filename;
-        filename = "ModeObject" +  Integer.toString(currentModeObject) + "R.txt";
 
+        filename = "ModeObject" +  Integer.toString(currentModeObject) + "0.txt";
         try {
             FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
             OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
-            outputwriter.write(Integer.toString(modes[currentModeObject].objLampR.getMasterColor()));
+            outputwriter.write(Integer.toString(modes[currentModeObject].objLamp0.getMasterColor()));
             outputwriter.close();
 
         }catch(Exception e) {
             e.printStackTrace();
         }
-        filename = "ModeObject" +  Integer.toString(currentModeObject) + "L.txt";
 
+        filename = "ModeObject" +  Integer.toString(currentModeObject) + "1.txt";
         try {
             FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
             OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
-            outputwriter.write(Integer.toString(modes[currentModeObject].objLampL.getMasterColor()));
+            outputwriter.write(Integer.toString(modes[currentModeObject].objLamp1.getMasterColor()));
             outputwriter.close();
 
         }catch(Exception e) {
             e.printStackTrace();
         }
+
         filename = "ModeObject" +  Integer.toString(currentModeObject) + "2.txt";
-
         try {
             FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
             OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
@@ -918,8 +930,8 @@ public class Chat extends Activity {
         }catch(Exception e) {
             e.printStackTrace();
         }
-        filename = "ModeObject" +  Integer.toString(currentModeObject) + "3.txt";
 
+        filename = "ModeObject" +  Integer.toString(currentModeObject) + "3.txt";
         try {
             FileOutputStream fileout = openFileOutput(filename, MODE_PRIVATE);
             OutputStreamWriter outputwriter = new OutputStreamWriter(fileout);
@@ -930,11 +942,11 @@ public class Chat extends Activity {
             e.printStackTrace();
         }
     }
-    private int ReadModeObject(int currentModeObject, String left_right) // reads the text file that holds the color of each lamp
+    private int ReadModeObject(int currentModeObject, String lamp) // reads the text file that holds the color of each lamp
     // It converts the string that it reads and converts it to an integer and returns that integer
     {
 
-        String fileName = "ModeObject" + Integer.toString(currentModeObject) + left_right +".txt";
+        String fileName = "ModeObject" + Integer.toString(currentModeObject) + lamp +".txt";
         String s = null;
         int color = 0;
         try {

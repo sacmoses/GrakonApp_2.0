@@ -23,9 +23,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        //BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
-        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+//        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter(); //deprecated
         if(bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) // If user phone's bluetooth is not enabled, this function will be called to allow them to enable it
         {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
