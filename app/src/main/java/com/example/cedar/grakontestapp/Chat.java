@@ -45,24 +45,20 @@ import java.util.UUID;
 
 public class Chat extends Activity {
 
-//	enum DataBytes {
-//        ZONE, RED, GREEN, BLUE, FUNCTION
-//    }
-    private final static int ZONE = 0;
-    private final static int RED = 1;
-    private final static int GREEN = 2;
-    private final static int BLUE = 3;
     private final static int AMBIENT = 0;
-    private final static int SOUND_SENSOR = 1;
-    private final static int DEMO = 2;
     private final static int FUNCTION = 12;
-    private final static int NUM_TOGGLE_BUTTONS = 3;
+    private final static int DEMO_MODE = 5;
+    private final static int SIS_MODE = 6;
+    private final static int NUM_TOGGLE_BUTTONS = 1;
+    private final static int ZONE_0 = 0;
+    private final static int ZONE_1 = 1;
+    private final static int ZONE_2 = 2;
+    private final static int ZONE_3 = 3;
+    private final static int NUM_ZONES = 4;
 	private int RSSI_THRESHOLD = -105;
     private static final int NUM_MODES = 7;
 	private TextView tv = null;
     private Dialog mDialog;
-//    private SeekBar overhead_seekbar;
-//    private SeekBar reading_seekbar;
 	private int activeAmbientMode;
     private boolean inColorSeclector = false;
     private modeObj[] modes; // SAVE ME
@@ -78,6 +74,7 @@ public class Chat extends Activity {
     boolean inrange = false;
     boolean deviceConnected = false;
     boolean firstConnection = false;
+    private int currentZone = 0;
 
 
     private byte PWR_FLAG = (byte)0x80;
@@ -88,13 +85,10 @@ public class Chat extends Activity {
     private byte ON_FLAG = (byte)0x01;
     private byte OFF_FLAG = (byte)0x00;
     byte[] datagram = { NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG,NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG};
-
+    private ArrayList<lamp> lampList;
 
 
     private boolean modeToggleButtons[];
-    // Lamp States
-//    private int overhead_intensity;
-//    private int reading_lamp_intensity;
 
     private static final UUID
             UUID_GRAKON_SERVICE = UUID.fromString("000000ef-0000-1000-8000-00805f9b34fb"),
@@ -114,6 +108,11 @@ public class Chat extends Activity {
         }
     };
 
+    /**
+     * onCreate():  Meat and Potatoes of the setup
+     *
+     * @param savedInstanceState
+     */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -214,8 +213,9 @@ public class Chat extends Activity {
                                           BluetoothGattService service, BluetoothGattCharacteristic ch,
                                           String description) // This function lets the phone know that the lighting controller recieved message correctly
             {
-                BluetoothGattCharacteristic c;
-
+                //BluetoothGattCharacteristic c;
+                Log.d("DEBUG","Write was successful!!!!!!!!!!!!!!!!!");
+                //transmitting = false;
 
             }
         });
@@ -258,19 +258,25 @@ public class Chat extends Activity {
                 modes[j].objLamp3.setMasterColor(ReadModeObject(j,"3"));
         }
 
+
+
         // Initialize toggle buttons
         modeToggleButtons = new boolean[NUM_TOGGLE_BUTTONS];
         for (int i = 0; i < NUM_TOGGLE_BUTTONS; i++)
             modeToggleButtons[i] = false;
 
 
+
         myListener = new CustomOnItemSelectedListener(); // Initializes the Drop-down ambient profile menu
-        activeAmbientMode = 0;
+        activeAmbientMode = AMBIENT;
 
 
-        // Initialize seek bar
-//        overhead_intensity = 120;
-//        reading_lamp_intensity = 120;
+        /* Initialize lamp objects */
+        lampList = new ArrayList<lamp>(NUM_ZONES);
+        lampList.add(ZONE_0, modes[activeAmbientMode].objLamp0);
+        lampList.add(ZONE_1, modes[activeAmbientMode].objLamp1);
+        lampList.add(ZONE_2, modes[activeAmbientMode].objLamp2);
+        lampList.add(ZONE_3, modes[activeAmbientMode].objLamp3);
 
         modes_activity();
         Scantime();
@@ -328,7 +334,12 @@ public class Chat extends Activity {
     private int RSSI_value_count = 0; // global to maintain value between iteration of function call
     private int[] RSSI_avg_array = new int[10];
 
-    // Find average of 10 RSSI values
+    /**
+     * avgRssiValues(): Finds average of 10 RSSI values
+     *
+     * @param rssi
+     * @return
+     */
     public int avgRssiValues(int rssi){
         if(firstConnection) {
             mDialog.dismiss();
@@ -358,7 +369,7 @@ public class Chat extends Activity {
                     avgRSSI = (int) avgRSSI / numToAvg;
                     RSSI_value_count = 0;
                     if (deviceConnected)
-                        notifyArduino();
+                        notifyBLEPeripheral();
                     return avgRSSI;
                 } else {
                     RSSI_avg_array[RSSI_value_count] = lastKnownRssi;
@@ -369,7 +380,13 @@ public class Chat extends Activity {
         return 0;
     }
 
-    public void changeConnectedText(boolean connected) // This function changes the test at the top of mode screen to reflect the connection status of the app
+    /**
+     * changeConnectedText():   This function changes the test at the top of mode screen to reflect
+     *                          the connection status of the app
+     *
+     * @param connected
+     */
+    public void changeConnectedText(boolean connected)
     {
         if (!connected) {
             rssi_value.setTextColor(Color.RED);
@@ -383,9 +400,13 @@ public class Chat extends Activity {
         }
     }
 
-    //
-    public void checkInRange(int rssi) // This function checks if the phone has come inside a predetermined range (declared at top) and turns on the
-    // the ambient and overhead lamps if it is in Range.
+    /**
+     * checkInRange():  This function checks if the phone has come inside a predetermined range
+     *                  (declared at top) and turns on the ambient and overhead lamps if it is in Range.
+     *
+     * @param rssi
+     */
+    public void checkInRange(int rssi)
     {
         if(!inrange) {
             if (rssi > RSSI_THRESHOLD) {
@@ -394,10 +415,14 @@ public class Chat extends Activity {
 //                modeToggleButtons[1] = true;
                 sendLightData();
                 if(!inColorSeclector){
-                    ToggleButton t1 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
-//                    ToggleButton t2 = (ToggleButton) findViewById(R.id.overhead_toggle_button);
-                    t1.setChecked(true);
-//                    t2.setChecked(true);
+                    ToggleButton t0 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
+                    t0.setChecked(true);
+
+                    Button b0 = (Button) findViewById(R.id.zone0);
+                    Button b1 = (Button) findViewById(R.id.zone1);
+                    Button b2 = (Button) findViewById(R.id.zone2);
+                    Button b3 = (Button) findViewById(R.id.zone3);
+                    setLightColors(t0.isChecked(),b0,b1,b2,b3);
                 }
             }
         }
@@ -421,7 +446,12 @@ public class Chat extends Activity {
         */
     }
 
-    public void setRSSI(int rssi) // Continuously averages RSSI value
+    /**
+     * setRSSI():   Continuously averages RSSI value
+     *
+     * @param rssi
+     */
+    public void setRSSI(int rssi)
     {
         lastKnownRssi = rssi;
         runOnUiThread(new Runnable() {
@@ -442,10 +472,13 @@ public class Chat extends Activity {
     }
     // END IMPORT CODE
 
-    public void onBackPressed() // Handles when the user presses the back buttons
-    //If the user is in the color selector screen they will taken back to the Lighting control screen
-    //If the user is in the lighting control screen a dialogue will pop up asking if the user wants to disconnect or stay connected
-    //If they hit disconnect they will disconnect from the lighting controller and return to main screen
+    /**
+     * onBackPressed(): Handles when the user presses the back buttons
+     *                  If the user is in the color selector screen they will taken back to the Lighting control screen
+     *                  If the user is in the lighting control screen a dialogue will pop up asking if the user wants to disconnect or stay connected
+     *                  If they hit disconnect they will disconnect from the lighting controller and return to main screen
+     */
+    public void onBackPressed()
     {
         if (inColorSeclector) {
             EditText text = (EditText) findViewById(R.id.current_mode_edit_text);
@@ -476,13 +509,17 @@ public class Chat extends Activity {
         }
     }
 
-    public void modes_activity() // Code that controls what happens in the lighting control screen
+    /**
+     * modes_activity():    Code that controls what happens in the lighting control screen
+     */
+    public void modes_activity()
     {
         //Checks if the user has previously saved names for their custom profiles
          for(int i = 2; i < NUM_MODES; i++){
            if(readName(i) !=null)
               AmbientModes[i] = readName(i);
         }
+
 
 
         inColorSeclector= false;
@@ -494,72 +531,54 @@ public class Chat extends Activity {
         spinner.setSelection(activeAmbientMode);
         spinner.setOnItemSelectedListener(myListener);
 
-        // Initialize  overhead and reading scroll bars
-//        overhead_seekbar = (SeekBar) findViewById(R.id.overhead_seekbar);
-//        overhead_seekbar.setProgress((int) (overhead_intensity/2.55) );
-//        reading_seekbar = (SeekBar) findViewById(R.id.reading_seekbar);
-//        reading_seekbar.setProgress((int) (reading_lamp_intensity/2.55));
+        /* Set the Image Mask Buttons' Colors */
+        ToggleButton t0 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
+        Button b0 = (Button) findViewById(R.id.zone0);
+        Button b1 = (Button) findViewById(R.id.zone1);
+        Button b2 = (Button) findViewById(R.id.zone2);
+        Button b3 = (Button) findViewById(R.id.zone3);
+        setLightColors(t0.isChecked(),b0,b1,b2,b3);
 
-
-
-        //Initialize on/off buttons
-        /*ToggleButton t0 = (ToggleButton)findViewById(R.id.color_select_toggle_button);
-        ToggleButton t1 = (ToggleButton)findViewById(R.id.overhead_toggle_button);
-        ToggleButton t2 = (ToggleButton)findViewById(R.id.reading_toggle_button);
-        ToggleButton t3 = (ToggleButton)findViewById(R.id.demo_toggle_button);
-
-        t0.setChecked(modeToggleButtons[0]);
-        t1.setChecked(modeToggleButtons[1]);
-        t2.setChecked(modeToggleButtons[2]);
-        t3.setChecked(modeToggleButtons[3]);*/
-        //Initialize on/off buttons
-        ToggleButton t0 = (ToggleButton)findViewById(R.id.color_select_toggle_button);
-        ToggleButton t1 = (ToggleButton)findViewById(R.id.reading_toggle_button);
-        ToggleButton t2 = (ToggleButton)findViewById(R.id.demo_toggle_button);
+        /* Set listeners for the Image Mask Buttons */
+        b0.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                currentZone = ZONE_0;
+                Log.d("DEBUG", "Zone 0 has been clicked!.....................");
+                edit_button_click(view);
+            }
+        });
+        b1.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                currentZone = ZONE_1;
+                Log.d("DEBUG", "Zone 1 has been clicked!.....................");
+                edit_button_click(view);
+            }
+        });
+        b2.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                currentZone = ZONE_2;
+                Log.d("DEBUG", "Zone 2 has been clicked!.....................");
+                edit_button_click(view);
+            }
+        });
+        b3.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                currentZone = ZONE_3;
+                Log.d("DEBUG", "Zone 3 has been clicked!.....................");
+                edit_button_click(view);
+            }
+        });
 
         t0.setChecked(modeToggleButtons[AMBIENT]);
-        t1.setChecked(modeToggleButtons[SOUND_SENSOR]);
-        t2.setChecked(modeToggleButtons[DEMO]);
 
         rssi_value = (TextView) findViewById(R.id.rssi_value);
         connect_disconnect_textView = (TextView) findViewById(R.id.connect_disconnect_textView);
 
         changeConnectedText(deviceConnected);
-
-//        overhead_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() // Instantly sends the data as the user adjusts scroll bars
-//        {
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean bool) {
-//                overhead_intensity = (int) (progressValue * 2.55);
-//                // Send live value to arduino
-//                if(modeToggleButtons[1])
-//                    sendLightData();
-//            }
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {           }
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {            }
-//        });
-//        reading_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean bool) {
-//                reading_lamp_intensity = (int) (progressValue * 2.55);
-//                // Send live value to arduino
-//                if(modeToggleButtons[2])
-//                    sendLightData();
-//
-//            }
-//
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {
-//                //Toast.makeText(getApplicationContext(), "Started tracking seekbar", Toast.LENGTH_SHORT).show();
-//            }
-//
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {
-//
-//            }
-//        });
 
     }
 
@@ -574,7 +593,10 @@ public class Chat extends Activity {
     }*/
 
 
-    public void color_select_activity() // This code determines what happens in the color selector screen
+    /**
+     * color_select_activity(): This determines what happens in the color selector screen
+     */
+    public void color_select_activity()
     {
         setContentView(R.layout.color_picker_screen);
         inColorSeclector = true;
@@ -587,157 +609,51 @@ public class Chat extends Activity {
         colorPicker.addPropertyChangeListener("color", listener);
     }
 
+    /**
+     * edit_button_click()  Handles what happens when an image mask button is clicked
+     *
+     * @param view
+     */
     public void edit_button_click(View view) {
         color_select_activity();
     }
 
     // ON/OFF BUTTONS
+
+    /**
+     * ambient_toggle_click():  manages the image mask buttons after the ambient toggle has been clicked,
+     *                          then sends information to the BLE peripheral
+     *
+     * @param view
+     */
     public void ambient_toggle_click(View view) {
-        if(((ToggleButton) view).isChecked())
-            modeToggleButtons[AMBIENT] = true;
-        else
-            modeToggleButtons[AMBIENT] = false;
+        Button b0 = (Button) findViewById(R.id.zone0);
+        Button b1 = (Button) findViewById(R.id.zone1);
+        Button b2 = (Button) findViewById(R.id.zone2);
+        Button b3 = (Button) findViewById(R.id.zone3);
+        modeToggleButtons[AMBIENT] = ((ToggleButton) view).isChecked();
+        setLightColors(modeToggleButtons[AMBIENT],b0,b1,b2,b3);
         sendLightData();
     }
 
-//    public void overhead_toggle_click(View view) {
-//        if(((ToggleButton) view).isChecked())
-//            modeToggleButtons[1] = true;
-//        else
-//            modeToggleButtons[1] = false;
-//        sendLightData();
-//    }
-
-    public void sound_sensor_click(View view) {
-        ToggleButton ambient_toggle = (ToggleButton) findViewById(R.id.color_select_toggle_button);
-//        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
-        ToggleButton demo_toggle = (ToggleButton) findViewById(R.id.demo_toggle_button);
-        Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
-//        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
-//        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
-        if(((ToggleButton) view).isChecked()) {
-            modeToggleButtons[SOUND_SENSOR] = true;
-
-            /* Disable the other toggle buttons */
-            ambient_toggle.setEnabled(false);
-//            overhead_toggle.setEnabled(false);
-            demo_toggle.setEnabled(false);
-//            s1.setEnabled(false);
-//            s2.setEnabled(false);
-            ambient_edit.setEnabled(false);
-
-            /* Turn on Sound Impact Sensor */
-            datagram[FUNCTION] = (byte)(SIS_FLAG | ON_FLAG);
-            /* Send the datagram */
-            BluetoothGatt gatt;
-            BluetoothGattCharacteristic c2;
-            gatt = mBleWrapper.getGatt();
-            try {
-                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-                mBleWrapper.writeDataToCharacteristic(c2, datagram);
-            }
-
-            catch( NullPointerException e ) {  }
-        }
-        else{
-            modeToggleButtons[SOUND_SENSOR] = false;
-
-            /* Enable the other toggle buttons */
-            ambient_toggle.setEnabled(true);
-//            overhead_toggle.setEnabled(true);
-            demo_toggle.setEnabled(true);
-//            s1.setEnabled(true);
-//            s2.setEnabled(true);
-            ambient_edit.setEnabled(true);
-
-            /* Turn off Sound Impact Sensor */
-            datagram[FUNCTION] = (byte)(SIS_FLAG | OFF_FLAG);
-            /* Send the datagram */
-            BluetoothGatt gatt;
-            BluetoothGattCharacteristic c2;
-            gatt = mBleWrapper.getGatt();
-            try {
-                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-                mBleWrapper.writeDataToCharacteristic(c2, datagram);
-            }
-
-            catch( NullPointerException e ) {  }
-
-            /* Turn the ambient lights back on */
-            sendLightData();
-        }
-    }
-
-    public void demo_click(View view) // If the user hits the demo button, this code "greys" out the rest of the buttons and sends a special signal to Lighting controller
-    {
-        ToggleButton ambient_toggle = (ToggleButton) findViewById(R.id.color_select_toggle_button);
-//        ToggleButton overhead_toggle = (ToggleButton) findViewById(R.id.overhead_toggle_button);
-        ToggleButton reading_toggle = (ToggleButton) findViewById(R.id.reading_toggle_button);
-        Button ambient_edit = (Button) findViewById(R.id.ambient_edit_button);
-//        SeekBar s1 = (SeekBar) findViewById(R.id.overhead_seekbar);
-//        SeekBar s2 = (SeekBar) findViewById(R.id.reading_seekbar);
-
-//        byte[] data = { 0x01 , 0x02};
-        if(((ToggleButton) view).isChecked()) {
-            modeToggleButtons[DEMO] = true;
-
-
-            ambient_toggle.setEnabled(false);
-//            overhead_toggle.setEnabled(false);
-            reading_toggle.setEnabled(false);
-//            s1.setEnabled(false);
-//            s2.setEnabled(false);
-            ambient_edit.setEnabled(false);
-
-            /* Turn the Demo on */
-            datagram[FUNCTION] = (byte)(DEMO_FLAG | ON_FLAG);
-            BluetoothGatt gatt;
-            BluetoothGattCharacteristic c2;
-            gatt = mBleWrapper.getGatt();
-            try {
-                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-                mBleWrapper.writeDataToCharacteristic(c2, datagram);
-            }
-
-            catch( NullPointerException e ) {  }
-
-        }else{
-            modeToggleButtons[DEMO] = false;
-            ambient_toggle.setEnabled(true);
-//            overhead_toggle.setEnabled(true);
-            reading_toggle.setEnabled(true);
-//            s1.setEnabled(true);
-//            s2.setEnabled(true);
-            ambient_edit.setEnabled(true);
-
-            /* Turn the Demo off */
-            datagram[FUNCTION] = (byte)(DEMO_FLAG | OFF_FLAG);
-            BluetoothGatt gatt;
-            BluetoothGattCharacteristic c2;
-            gatt = mBleWrapper.getGatt();
-            try {
-                c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-                mBleWrapper.writeDataToCharacteristic(c2, datagram);
-            }
-
-            catch( NullPointerException e ) {  }
-
-            /* Turn the ambient lights back on */
-            sendLightData();
-        }
-
-
-
-
-
-    }
-
-
     // END ON/OFF BUTTONS
-    public class CustomOnItemSelectedListener implements AdapterView.OnItemSelectedListener // Handles clicks to the ambient profile drop-down menu
+
+    /**
+     * Class CustomOnItemSelectedListener: Handles clicks to the ambient profile drop-down menu
+     */
+    public class CustomOnItemSelectedListener implements AdapterView.OnItemSelectedListener //
     {
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             activeAmbientMode = (int) id;
+            /* Set the Image Mask Buttons */
+            ToggleButton t0 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
+            if(t0.isChecked()) {
+                Button b0 = (Button) findViewById(R.id.zone0);
+                Button b1 = (Button) findViewById(R.id.zone1);
+                Button b2 = (Button) findViewById(R.id.zone2);
+                Button b3 = (Button) findViewById(R.id.zone3);
+                setLightColors(t0.isChecked(),b0,b1,b2,b3);
+            }
             sendLightData();
 
 
@@ -748,104 +664,127 @@ public class Chat extends Activity {
         }
     }
 
-    public void set_zone_0(View view) {
-        modeToggleButtons[AMBIENT] = true;
-        modes[activeAmbientMode].objLamp0.setMasterColor(colorPicker.getColor());
+    /**
+     * set_zone():  Gathers information from the color picker wheel data and stores it to the lamp
+     *              objects belonging to the current ambient mode
+     *
+     * @param view
+     */
+    public void set_zone(View view) {
+        switch(currentZone){
+            case ZONE_0:
+                modes[activeAmbientMode].objLamp0.setMasterColor(colorPicker.getColor());
+                break;
+            case ZONE_1:
+                modes[activeAmbientMode].objLamp1.setMasterColor(colorPicker.getColor());
+                break;
+            case ZONE_2:
+                modes[activeAmbientMode].objLamp2.setMasterColor(colorPicker.getColor());
+                break;
+            case ZONE_3:
+                modes[activeAmbientMode].objLamp3.setMasterColor(colorPicker.getColor());
+        }
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();
 
     }
 
-    public void set_zone_1(View view) {
-        modeToggleButtons[AMBIENT] = true;
-        modes[activeAmbientMode].objLamp1.setMasterColor(colorPicker.getColor());
-        saveModeObject(activeAmbientMode); // Save color data into file
-        sendLightData();
-    }
-    public void set_zone_2(View view) {
-        modeToggleButtons[AMBIENT] = true;
-        modes[activeAmbientMode].objLamp2.setMasterColor(colorPicker.getColor());
-        saveModeObject(activeAmbientMode); // Save color data into file
-        sendLightData();
-
-    }
-
-    public void set_zone_3(View view) {
-        modeToggleButtons[AMBIENT] = true;
-        modes[activeAmbientMode].objLamp3.setMasterColor(colorPicker.getColor());
-        saveModeObject(activeAmbientMode); // Save color data into file
-        sendLightData();
-    }
-
-    public void sendLightData() // This function forms the packets that are sent out to the lighting controller when light state is changed
-    //	(more info on the packets contained in the Project Report. Section 4.2.2)
+    //TODO: update this description
+    /**
+     * sendLightData(): This function forms the packets that are sent out to the lighting controller
+     *                  when light state is changed
+     *                  (more info on the packets contained in the 15.2 Project Report. Section 4.2.2)
+     */
+    public void sendLightData()
     {
-        // {
-//        byte[] data = { 0x00, 0x00, 0x00, 0x00, 0x00};
-        ArrayList<lamp> lampList = new ArrayList<lamp>();
-        lampList.add(modes[activeAmbientMode].objLamp0);
-        lampList.add(modes[activeAmbientMode].objLamp1);
-        lampList.add(modes[activeAmbientMode].objLamp2);
-        lampList.add(modes[activeAmbientMode].objLamp3);
-
-        datagram[FUNCTION] = (byte)(PWR_FLAG | ON_FLAG);
-        /* Send data to BLE peripheral */
+        /* Get the gatt server and characteristic information */
         BluetoothGatt gatt;
         BluetoothGattCharacteristic c2;
         gatt = mBleWrapper.getGatt();
-        try {
-            c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-            mBleWrapper.writeDataToCharacteristic(c2, datagram);
-        }
-        catch( NullPointerException e ) {  }
-
-        /*We're updating, so check the Update Flag*/
-        datagram[FUNCTION] = UPD_FLAG;
 
         /* If the Ambient light is checked on - Change each lamp/Zone */
         if(modeToggleButtons[AMBIENT]) {
-            /* For every lamp assign the new data to datagram */
-            int j = 0;
-            for(int i = 0; i < lampList.size(); i++){
-                datagram[j++] = (byte) lampList.get(i).getR();
-                datagram[j++] = (byte) lampList.get(i).getG();
-                datagram[j++] = (byte) lampList.get(i).getB();
+
+            /* Set the flags and data for the appropriate setting */
+            switch (activeAmbientMode) {
+                case DEMO_MODE:
+                    /* Turn the Demo on */
+                    datagram[FUNCTION] = (byte)(DEMO_FLAG | ON_FLAG);
+                    break;
+                case SIS_MODE:
+                    /* Turn the Sound Sensor on */
+                    datagram[FUNCTION] = (byte)(SIS_FLAG | ON_FLAG);
+                    break;
+                default:
+                    if(datagram[FUNCTION] == (byte)(PWR_FLAG | OFF_FLAG)) {
+                        /* Send POWER ON data to BLE peripheral */
+                        datagram[FUNCTION] = (byte) (PWR_FLAG | ON_FLAG); // Turn on the lamps
+                        try {
+                            c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
+                            mBleWrapper.writeDataToCharacteristic(c2, datagram);
+                            Log.d("DEBUG", "Sent POWER ON datagram");
+                            Thread.sleep(200);
+                        } catch (NullPointerException e) {
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    /*We're updating, so check the Update Flag*/
+                    datagram[FUNCTION] = UPD_FLAG;
+                    // Get the lamp objects
+                    modeObj mode = modes[activeAmbientMode];
+                    lampList.set(ZONE_0, mode.objLamp0);
+                    lampList.set(ZONE_1, mode.objLamp1);
+                    lampList.set(ZONE_2, mode.objLamp2);
+                    lampList.set(ZONE_3, mode.objLamp3);
+                    /* For every lamp assign the new data to datagram */
+                    int j = 0;
+                    for (int i = 0; i < lampList.size(); i++) {
+                        datagram[j++] = (byte) lampList.get(i).getR();
+                        datagram[j++] = (byte) lampList.get(i).getG();
+                        datagram[j++] = (byte) lampList.get(i).getB();
+                    }
             }
         }
         /* Otherwise, turn off the lights */
         else if(!modeToggleButtons[AMBIENT]) {
-            datagram[FUNCTION] = (byte)(PWR_FLAG | NO_FLAG);
-//            for (int i = 0; i < FUNCTION; i++) {
-//                datagram[i] = NO_FLAG;
-//            }
+            switch(activeAmbientMode) {
+                case DEMO_MODE:
+                    datagram[FUNCTION] = (byte) (DEMO_FLAG | NO_FLAG);
+                    break;
+                case SIS_MODE:
+                    datagram[FUNCTION] = (byte) (SIS_FLAG | NO_FLAG);
+                    break;
+                default:
+                    datagram[FUNCTION] = (byte) (PWR_FLAG | NO_FLAG);
+            }
         }
 
         /* Send data to BLE peripheral */
-//        BluetoothGatt gatmt;
-//        BluetoothGattCharacteristic c2;
-        gatt = mBleWrapper.getGatt();
         try {
+//            while(transmitting);
+//            transmitting = true;
             c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
             mBleWrapper.writeDataToCharacteristic(c2, datagram);
+            Log.d("DEBUG", "Sent new datagram");
+            Thread.sleep(200);
         }
         catch( NullPointerException e ) {  }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
-    public void notifyArduino() // This function forms the acknowledgement packets sent by the phone to the lighting controller
-    // See section 4.2.2 of project report for more info
+    /**
+     * notifyBLEPeripheral():   This function forms the acknowledgement packets sent by the phone to the lighting controller
+     *                          See section 4.2.2 of ECE 15.2 project report for more info
+     */
+    public void notifyBLEPeripheral() //
+    //
     {
         try {
-//            byte[] data = {0x00};
-            BluetoothGatt gatt;
-            BluetoothGattCharacteristic c2;
-            gatt = mBleWrapper.getGatt();
-            if (gatt == null) {
-                Log.d("NULLPOINT", "GATT is NULL");
-            }
-            c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
-
-            mBleWrapper.writeDataToCharacteristic(c2, datagram);
+            sendLightData();
 
         } catch (NullPointerException e) {
             Log.d("NULLPOINT", "Avoided exception w/ try catch block");
@@ -853,8 +792,13 @@ public class Chat extends Activity {
     }
 
 
-
-    private void saveName(int modeToRead, EditText text) // Saves the name of the custom profile in a text file stored locally on the phone
+    /**
+     * saveName():  Saves the name of the custom profile in a text file stored locally on the phone
+     *
+     * @param modeToRead
+     * @param text
+     */
+    private void saveName(int modeToRead, EditText text)
     {
         String filename = AmbientModes[modeToRead]+".txt";
         try {
@@ -868,9 +812,16 @@ public class Chat extends Activity {
             e.printStackTrace();
         }
     }
-    private String readName(int modeToRead) // Looks for a file with the name of the custom profile
-    // If the file exist then it reads the file and returns the name.
-    // If can't find the file it throws an exception which is caught
+
+    /**
+     * readName():  Looks for a file with the name of the custom profile
+     *              If the file exist then it reads the file and returns the name.
+     *              If can't find the file it throws an exception which is caught
+     *
+     * @param modeToRead
+     * @return
+     */
+    private String readName(int modeToRead)
     {
         String filename = AmbientModes[modeToRead] + ".txt";
         String s = null;
@@ -893,8 +844,15 @@ public class Chat extends Activity {
         }
         return s;
     }
-    private void saveModeObject(int currentModeObject) //Saves the color of the both lamps in text files stored locally on the phone
-    // converts the color, which is stored as an integer, and converts it to a string so it can be saved as a text file.
+
+    /**
+     * saveModeObject():    Saves the color of the both lamps in text files stored locally on the phone
+     *                      converts the color, which is stored as an integer, and converts it to a
+     *                      string so it can be saved as a text file.
+     *
+     * @param currentModeObject
+     */
+    private void saveModeObject(int currentModeObject)
     {
         String filename;
 
@@ -942,8 +900,17 @@ public class Chat extends Activity {
             e.printStackTrace();
         }
     }
-    private int ReadModeObject(int currentModeObject, String lamp) // reads the text file that holds the color of each lamp
-    // It converts the string that it reads and converts it to an integer and returns that integer
+
+    /**
+     * ReadModeObject():    Reads the text file that holds the color of each lamp
+     *                      It converts the string that it reads and converts it to an integer and
+     *                      returns that integer
+     *
+     * @param currentModeObject
+     * @param lamp
+     * @return
+     */
+    private int ReadModeObject(int currentModeObject, String lamp)
     {
 
         String fileName = "ModeObject" + Integer.toString(currentModeObject) + lamp +".txt";
@@ -971,7 +938,14 @@ public class Chat extends Activity {
 
         return color;
     }
-    public void showRoundProcessDialog(Context mContext, int layout) // This function controls the loading dialogue
+
+    /**
+     * showRoundProcessDialog():    This function controls the loading dialogue
+     *
+     * @param mContext
+     * @param layout
+     */
+    public void showRoundProcessDialog(Context mContext, int layout)
     {
         DialogInterface.OnKeyListener keyListener = new DialogInterface.OnKeyListener() {
             @Override
@@ -994,5 +968,58 @@ public class Chat extends Activity {
         mDialog.setCanceledOnTouchOutside(false);
         mDialog.show();
         mDialog.setContentView(layout);
+    }
+
+    /**
+     * setLightColors():    Takes in the image masking buttons and changes the colors depending on the
+     *                      input parameters.
+     *
+     * @param on    boolean indicating whether or not the ambient light toggle button is checked;
+     *              if on == true, lights will turn/stay colorful, if on == false, buttons will turn/stay transparent
+     * @param b0    button representing zone0
+     * @param b1    button representing zone1
+     * @param b2    button representing zone2
+     * @param b3    button representing zone3
+     */
+    public void setLightColors(boolean on, Button b0, Button b1, Button b2, Button b3){
+
+        /* If the ambient toggle button is checked, color the image mask buttons */
+        if(on) {
+            modeObj m = modes[activeAmbientMode];
+            b0.setBackgroundColor(Color.argb(0x80, m.objLamp0.getR(), m.objLamp0.getG(), m.objLamp0.getB()));
+            b1.setBackgroundColor(Color.argb(0x80, m.objLamp1.getR(), m.objLamp1.getG(), m.objLamp1.getB()));
+            b2.setBackgroundColor(Color.argb(0x80, m.objLamp2.getR(), m.objLamp2.getG(), m.objLamp2.getB()));
+            b3.setBackgroundColor(Color.argb(0x80, m.objLamp3.getR(), m.objLamp3.getG(), m.objLamp3.getB()));
+        }
+        /* Otherwise, make the image mask buttons transparent */
+        else{
+            b0.setBackgroundColor(Color.TRANSPARENT);
+            b1.setBackgroundColor(Color.TRANSPARENT);
+            b2.setBackgroundColor(Color.TRANSPARENT);
+            b3.setBackgroundColor(Color.TRANSPARENT);
+        }
+
+        /* If Demo or Sound impact sensor are on, disable the image mask buttons */
+        if((activeAmbientMode == DEMO_MODE)||(activeAmbientMode == SIS_MODE)){
+            b0.setEnabled(false);
+            b1.setEnabled(false);
+            b2.setEnabled(false);
+            b3.setEnabled(false);
+            b0.setClickable(false);
+            b1.setClickable(false);
+            b2.setClickable(false);
+            b3.setClickable(false);
+        }
+        /* Otherwise, enable them */
+        else{
+            b0.setEnabled(true);
+            b1.setEnabled(true);
+            b2.setEnabled(true);
+            b3.setEnabled(true);
+            b0.setClickable(true);
+            b1.setClickable(true);
+            b2.setClickable(true);
+            b3.setClickable(true);
+        }
     }
 }

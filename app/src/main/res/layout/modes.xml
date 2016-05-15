@@ -49,37 +49,37 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!--<LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            >
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ambient Select:"
-                android:textSize="20sp"
-                android:textColor="#FFF"
-                android:layout_weight="1"
-                android:layout_gravity="center"
-                android:gravity="left"
-                android:layout_marginRight="120dp"/>
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="edit"
-                android:textColor="#000"
-                android:textSize="20sp"
-                android:layout_weight="1"
-                android:background="#808080"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp"
-                android:onClick="edit_button_click"
-                android:id="@+id/ambient_edit_button"
-                android:layout_marginBottom="5dp"/>
+            android:text="Ambient Select:"
+            android:textSize="20sp"
+            android:textColor="#FFF"
+            android:layout_weight="1"
+            android:layout_gravity="center"
+            android:gravity="left"
+            android:layout_marginRight="120dp"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="edit"
+            android:textColor="#000"
+            android:textSize="20sp"
+            android:layout_weight="1"
+            android:background="#808080"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:onClick="edit_button_click"
+            android:id="@+id/ambient_edit_button"
+            android:layout_marginBottom="5dp"/>
 
-            </LinearLayout>
+    </LinearLayout>-->
 
 
         <LinearLayout
@@ -153,7 +153,7 @@
             android:layout_marginBottom="5dp"
             />-->
 
-        <LinearLayout
+        <!--<LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -181,7 +181,7 @@
                 android:textOff="Off"
                 android:onClick="sound_sensor_click"/>
 
-        </LinearLayout>
+        </LinearLayout>-->
 
         <!--<SeekBar
             android:layout_width="match_parent"
@@ -193,7 +193,7 @@
             android:layout_marginBottom="5dp"
             />-->
 
-        <LinearLayout
+        <!--<LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -221,7 +221,7 @@
                 android:textOff="Off"
                 android:onClick="demo_click"/>
 
-        </LinearLayout>
+        </LinearLayout>-->
 
 
 <!--    <EditText
@@ -238,7 +238,58 @@
         android:onClick="RSSI_click"
         android:text="Set Rssi Value"/>-->
 
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
 
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="0dp"
+                android:background="@drawable/vehiclelayout3"
+                android:contentDescription="@string/grakon"/>
+
+
+
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:stretchColumns="*">
+
+                <TableRow>
+
+                    <Button
+                    android:layout_height="236dp"
+                        android:background="#00000000"
+                    android:id="@+id/zone0"/>
+
+                    <Button
+                        android:layout_height="236dp"
+                        android:background="#00000000"
+                        android:id="@+id/zone1"/>
+
+                </TableRow>
+
+                <TableRow>
+
+                    <Button
+                        android:layout_height="236dp"
+                        android:background="#00000000"
+                        android:id="@+id/zone2"/>
+
+                    <Button
+                        android:layout_height="236dp"
+                        android:background="#00000000"
+                        android:id="@+id/zone3"/>
+
+                </TableRow>
+
+
+            </TableLayout>
+
+        </FrameLayout>
 
 
     </LinearLayout>
