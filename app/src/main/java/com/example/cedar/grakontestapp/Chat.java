@@ -632,7 +632,7 @@ public class Chat extends Activity {
         Button b2 = (Button) findViewById(R.id.zone2);
         Button b3 = (Button) findViewById(R.id.zone3);
         modeToggleButtons[AMBIENT] = ((ToggleButton) view).isChecked();
-        setLightColors(modeToggleButtons[AMBIENT],b0,b1,b2,b3);
+        setLightColors(modeToggleButtons[AMBIENT], b0, b1, b2, b3);
         sendLightData();
     }
 
@@ -717,8 +717,8 @@ public class Chat extends Activity {
                     break;
                 default:
                     if(datagram[FUNCTION] == (byte)(PWR_FLAG | OFF_FLAG)) {
-                        /* Send POWER ON data to BLE peripheral */
-                        datagram[FUNCTION] = (byte) (PWR_FLAG | ON_FLAG); // Turn on the lamps
+                        /* Send UPDATE data to BLE peripheral */
+                        datagram[FUNCTION] = UPD_FLAG; // Turn on the lamps
                         try {
                             c2 = gatt.getService(UUID_GRAKON_SERVICE).getCharacteristic(UUID_GRAKON_CHAR_TX);
                             mBleWrapper.writeDataToCharacteristic(c2, datagram);
@@ -748,16 +748,7 @@ public class Chat extends Activity {
         }
         /* Otherwise, turn off the lights */
         else if(!modeToggleButtons[AMBIENT]) {
-            switch(activeAmbientMode) {
-                case DEMO_MODE:
-                    datagram[FUNCTION] = (byte) (DEMO_FLAG | NO_FLAG);
-                    break;
-                case SIS_MODE:
-                    datagram[FUNCTION] = (byte) (SIS_FLAG | NO_FLAG);
-                    break;
-                default:
-                    datagram[FUNCTION] = (byte) (PWR_FLAG | NO_FLAG);
-            }
+            datagram[FUNCTION] = (byte) (PWR_FLAG | OFF_FLAG);
         }
 
         /* Send data to BLE peripheral */
