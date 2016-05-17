@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Grakon</string>
+    <string name="app_name">Grakon 2.0</string>
     <string name="action_settings">Settings</string>
     <string name="status_text_view">Status: </string>
     <string name="status_is_connected">Connected</string>

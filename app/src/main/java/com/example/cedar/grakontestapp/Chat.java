@@ -74,6 +74,7 @@ public class Chat extends Activity {
     boolean inrange = false;
     boolean deviceConnected = false;
     boolean firstConnection = false;
+    boolean setAllZones = false;
     private int currentZone = 0;
 
 
@@ -412,7 +413,6 @@ public class Chat extends Activity {
             if (rssi > RSSI_THRESHOLD) {
                 inrange = true;
                 modeToggleButtons[AMBIENT] = true;
-//                modeToggleButtons[1] = true;
                 sendLightData();
                 if(!inColorSeclector){
                     ToggleButton t0 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
@@ -664,6 +664,10 @@ public class Chat extends Activity {
         }
     }
 
+    public void set_all_zones(View view){
+        setAllZones = true;
+        set_zone(view);
+    }
     /**
      * set_zone():  Gathers information from the color picker wheel data and stores it to the lamp
      *              objects belonging to the current ambient mode
@@ -671,18 +675,33 @@ public class Chat extends Activity {
      * @param view
      */
     public void set_zone(View view) {
-        switch(currentZone){
-            case ZONE_0:
-                modes[activeAmbientMode].objLamp0.setMasterColor(colorPicker.getColor());
-                break;
-            case ZONE_1:
-                modes[activeAmbientMode].objLamp1.setMasterColor(colorPicker.getColor());
-                break;
-            case ZONE_2:
-                modes[activeAmbientMode].objLamp2.setMasterColor(colorPicker.getColor());
-                break;
-            case ZONE_3:
-                modes[activeAmbientMode].objLamp3.setMasterColor(colorPicker.getColor());
+        /* Get the current mode object and the new color to change to */
+        modeObj m = modes[activeAmbientMode];
+        int newColor = colorPicker.getColor();
+
+        /* If all zones need to be updated with the same color */
+        if(setAllZones){
+            m.objLamp0.setMasterColor(newColor);
+            m.objLamp1.setMasterColor(newColor);
+            m.objLamp2.setMasterColor(newColor);
+            m.objLamp3.setMasterColor(newColor);
+            setAllZones = false;
+        }
+        /* Otherwise, cherry-pick the zones */
+        else{
+            switch(currentZone) {
+                case ZONE_0:
+                    m.objLamp0.setMasterColor(newColor);
+                    break;
+                case ZONE_1:
+                    m.objLamp1.setMasterColor(newColor);
+                    break;
+                case ZONE_2:
+                    m.objLamp2.setMasterColor(newColor);
+                    break;
+                case ZONE_3:
+                    m.objLamp3.setMasterColor(newColor);
+            }
         }
         saveModeObject(activeAmbientMode); // Save color data into file
         sendLightData();

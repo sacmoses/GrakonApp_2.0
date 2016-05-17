@@ -15,7 +15,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/grakonlogo"
+        android:icon="@drawable/aclogo"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
