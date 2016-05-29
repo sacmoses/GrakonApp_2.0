@@ -87,6 +87,7 @@ public class Chat extends Activity {
     private byte OFF_FLAG = (byte)0x00;
     byte[] datagram = { NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG,NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG};
     private ArrayList<lamp> lampList;
+    private String mDeviceAddress;
 
 
     private boolean modeToggleButtons[];
@@ -127,74 +128,89 @@ public class Chat extends Activity {
 
         mBleWrapper = new BleWrapper(this, new BleWrapperUiCallbacks.Null() // This function controls how the Bluetooth operates. It's constantly  running in the background.
         {
-            @Override
             public void uiDeviceFound(final BluetoothDevice device,
                                       final int rssi,
                                       final byte[] record) // If  a device is found then function will call the Bluetooth Wrapper Class to connect
             {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d("GRAKON:", "" + rssi);
+                        setRSSI(rssi);
 
-                Log.d("GRAKON:", "" + rssi);
-                setRSSI(rssi);
-
-                if(device.getName().equals("ATMEL-BLE"))
-                {
-                    boolean status;
-                    status = mBleWrapper.connect(device.getAddress().toString());
-                    if(!status)
-                    {
-                        Log.d("DEBUG: ","Can't connect to "+device.getName());
-                    }
-                    else if(status)
-                        Log.d("DEBUG: ","Connected to "+device.getName());
+                        if (device.getName().equals("ATMEL-BLE")) {
+                            boolean status;
+                            status = mBleWrapper.connect(device.getAddress().toString());
+                            if (!status) {
+                                Log.d("DEBUG: ", "Can't connect to " + device.getName());
+                            } else if (status)
+                                Log.d("DEBUG: ", "Connected to " + device.getName());
 //                    firstConnection = true;
-                }
+                        }
+                    }
+                });
+
 
             }
 
-            @Override
             public void uiDeviceConnected(final BluetoothGatt gatt,
                                           final BluetoothDevice device) // Once the device is completely connected the app will stop scanning and log the connection
             {
-                String test = device.getName();
-                Log.d("CONNECTED: ", "Connected to a device: " + test);
-                deviceConnected = true; // local variable for class to access
-                firstConnection = true;
-                Stoptime();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String test = device.getName();
+                        Log.d("CONNECTED: ", "Connected to a device: " + test);
+                        deviceConnected = true; // local variable for class to access
+                        firstConnection = true;
+                        Stoptime();
+                    }
+                });
             }
 
-            @Override
             public void uiDeviceDisconnected(final BluetoothGatt gatt,
                                              final BluetoothDevice device) // If the device disconnects it will change local variables to indicate as such
             {
-                Log.d("Disconnected", "device disconnected????");
-                deviceConnected = false;
-                inrange = false;
-
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d("Disconnected", "device disconnected????");
+                        deviceConnected = false;
+                        inrange = false;
+                        Scantime();
+                    }
+                });
             }
 
 
-
-            @Override
             public void uiAvailableServices(BluetoothGatt gatt,
                                             BluetoothDevice device,
                                             List<BluetoothGattService> services) // This function tells the phone what sort of messages the lighting controller can accept
             {
-                for(BluetoothGattService service : services)
-                {
-                    String serviceName = BleNamesResolver.resolveUuid(service.getUuid().toString());
-                    Log.d("DEBUG", serviceName);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        for(BluetoothGattService service : mBleWrapper.getCachedServices())
+                        {
+                            String serviceName = BleNamesResolver.resolveUuid(service.getUuid().toString());
+                            Log.d("DEBUG", serviceName);
+                        }
+                    }
+                });
 
-                }
             }
 
-            @Override
             public void uiNewRssiAvailable(final BluetoothGatt gatt, final BluetoothDevice device, final int rssi) // This function keeps track of the RSSI value sent by the lighting controller
             {
-                setRSSI(rssi);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setRSSI(rssi);
+                    }
+                });
+
 
             }
-
-
 
             @Override
             public void uiNewValueForCharacteristic(BluetoothGatt gatt,
@@ -214,9 +230,15 @@ public class Chat extends Activity {
                                           BluetoothGattService service, BluetoothGattCharacteristic ch,
                                           String description) // This function lets the phone know that the lighting controller recieved message correctly
             {
-                //BluetoothGattCharacteristic c;
-                Log.d("DEBUG","Write was successful!!!!!!!!!!!!!!!!!");
-                //transmitting = false;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //BluetoothGattCharacteristic c;
+                        Log.d("DEBUG", "Write was successful!!!!!!!!!!!!!!!!!");
+                        //transmitting = false;
+                    }
+                });
+
 
             }
         });
@@ -305,6 +327,15 @@ public class Chat extends Activity {
 		super.onStop();
 
 	}
+
+//    @Override
+//    protected void onPause() {
+//        super.onPause();
+//
+//        mBleWrapper.stopMonitoringRssiValue();
+//        mBleWrapper.disconnect();
+//        mBleWrapper.close();
+//    }
 
 
 	@Override
