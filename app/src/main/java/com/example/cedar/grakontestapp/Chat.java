@@ -25,6 +25,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.os.Bundle;
+import java.util.ArrayList;
+import java.util.Locale;
+import android.content.ActivityNotFoundException;
+import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.view.Menu;
+import android.view.View;
+import android.widget.ImageButton;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -35,6 +44,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 
 /*
 * This bit of code houses both the lighting control screen as well as the color picker screen.
@@ -55,6 +65,7 @@ public class Chat extends Activity {
     private final static int ZONE_2 = 2;
     private final static int ZONE_3 = 3;
     private final static int NUM_ZONES = 4;
+    private final static String PERIPHERAL_NAME = "ATMEL-BLE";
 	private int RSSI_THRESHOLD = -105;
     private static final int NUM_MODES = 7;
 	private TextView tv = null;
@@ -78,6 +89,7 @@ public class Chat extends Activity {
     private int currentZone = 0;
 
 
+
     private byte PWR_FLAG = (byte)0x80;
     private byte SIS_FLAG = (byte)0x40;
     private byte DEMO_FLAG = (byte)0x20;
@@ -88,6 +100,9 @@ public class Chat extends Activity {
     byte[] datagram = { NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG,NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG, NO_FLAG};
     private ArrayList<lamp> lampList;
     private String mDeviceAddress;
+    private TextView txtSpeechInput;
+    private ImageButton btnSpeak;
+    private final int REQ_CODE_SPEECH_INPUT = 100;
 
 
     private boolean modeToggleButtons[];
@@ -126,6 +141,7 @@ public class Chat extends Activity {
             showRoundProcessDialog(Chat.this, R.layout.loading_process_dialog_anim);
         } //Code for the Loading Dialog
 
+
         mBleWrapper = new BleWrapper(this, new BleWrapperUiCallbacks.Null() // This function controls how the Bluetooth operates. It's constantly  running in the background.
         {
             public void uiDeviceFound(final BluetoothDevice device,
@@ -138,7 +154,7 @@ public class Chat extends Activity {
                         Log.d("GRAKON:", "" + rssi);
                         setRSSI(rssi);
 
-                        if (device.getName().equals("ATMEL-BLE")) {
+                        if (device.getName().equals(PERIPHERAL_NAME)) {
                             boolean status;
                             status = mBleWrapper.connect(device.getAddress().toString());
                             if (!status) {
@@ -319,7 +335,13 @@ public class Chat extends Activity {
             startActivity(enableBtIntent);
             finish();
         }
-
+        Scantime();
+//        boolean status;
+//        status = mBleWrapper.connect(PERIPHERAL_NAME);
+//        if (!status) {
+//            Log.d("DEBUG: ", "Can't connect to " + PERIPHERAL_NAME);
+//        } else if (status)
+//            Log.d("DEBUG: ", "Connected to " + PERIPHERAL_NAME);
 	}
 
 	@Override
@@ -328,14 +350,13 @@ public class Chat extends Activity {
 
 	}
 
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//
-//        mBleWrapper.stopMonitoringRssiValue();
-//        mBleWrapper.disconnect();
-//        mBleWrapper.close();
-//    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mBleWrapper.stopMonitoringRssiValue();
+        mBleWrapper.disconnect();
+        mBleWrapper.close();
+    }
 
 
 	@Override
@@ -353,6 +374,64 @@ public class Chat extends Activity {
         }
     }
 
+    /**
+     * Showing google speech input dialog
+     * */
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Receiving speech input
+     * */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> result = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    txtSpeechInput.setText(result.get(0));
+                    String input = txtSpeechInput.getText().toString();
+                    Log.d("SPEECH",input);
+                    for(int i = 0; i < NUM_MODES; i++){
+                        if(input.equalsIgnoreCase(AmbientModes[i])){
+                            activeAmbientMode = i;
+                            Spinner spinner = (Spinner)findViewById(R.id.ambient_select_spinner);
+                            spinner.setSelection(activeAmbientMode);
+
+                            /* Set the Image Mask Buttons' Colors */
+                            ToggleButton t0 = (ToggleButton) findViewById(R.id.color_select_toggle_button);
+                            t0.setChecked(true);
+                            Button b0 = (Button) findViewById(R.id.zone0);
+                            Button b1 = (Button) findViewById(R.id.zone1);
+                            Button b2 = (Button) findViewById(R.id.zone2);
+                            Button b3 = (Button) findViewById(R.id.zone3);
+                            setLightColors(t0.isChecked(),b0,b1,b2,b3);
+                            sendLightData();
+                        }
+                    }
+                }
+                break;
+            }
+
+        }
+    }
 
     public void Stoptime() // This function stops the scan process
     {
@@ -561,6 +640,15 @@ public class Chat extends Activity {
         spinner.setAdapter(stringArrayAdapter);
         spinner.setSelection(activeAmbientMode);
         spinner.setOnItemSelectedListener(myListener);
+
+        txtSpeechInput = (TextView) findViewById(R.id.txtSpeechInput);
+        btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
+        btnSpeak.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                promptSpeechInput();
+            }
+        });
 
         /* Set the Image Mask Buttons' Colors */
         ToggleButton t0 = (ToggleButton) findViewById(R.id.color_select_toggle_button);

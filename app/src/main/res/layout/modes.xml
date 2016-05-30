@@ -12,16 +12,27 @@
         android:orientation="horizontal"
         android:gravity="left"
         android:layout_marginBottom="0dp"
-        android:layout_marginTop="0dp">
+        android:layout_marginTop="0dp"
+        android:weightSum="1">
 
-        <TextView
+        <!--<TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="#FFF"
             android:text="Status: "
             android:textSize="30sp"
             android:textStyle="bold"
-            android:layout_marginRight="10dp"/>
+            android:layout_marginRight="10dp"/>-->
+        <ImageButton
+            android:id="@+id/btnSpeak"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="10dp"
+            android:src="@drawable/ico_mic"
+            android:layout_weight="0.57" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -289,11 +300,22 @@
 
             </TableLayout>
 
+
         </FrameLayout>
 
 
-    </LinearLayout>
 
+    </LinearLayout>
+    <TextView
+        android:id="@+id/txtSpeechInput"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:textColor="@color/white"
+        android:textSize="26dp"
+        android:textStyle="normal" />
 
 
 </LinearLayout>
