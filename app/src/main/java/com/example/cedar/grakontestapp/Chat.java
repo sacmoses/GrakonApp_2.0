@@ -153,15 +153,18 @@ public class Chat extends Activity {
                     public void run() {
                         Log.d("GRAKON:", "" + rssi);
                         setRSSI(rssi);
-
-                        if (device.getName().equals(PERIPHERAL_NAME)) {
-                            boolean status;
-                            status = mBleWrapper.connect(device.getAddress().toString());
-                            if (!status) {
-                                Log.d("DEBUG: ", "Can't connect to " + device.getName());
-                            } else if (status)
-                                Log.d("DEBUG: ", "Connected to " + device.getName());
+                        try {
+                            if (device.getName().equals(PERIPHERAL_NAME)) {
+                                boolean status;
+                                status = mBleWrapper.connect(device.getAddress().toString());
+                                if (!status) {
+                                    Log.d("DEBUG: ", "Can't connect to " + device.getName());
+                                } else if (status)
+                                    Log.d("DEBUG: ", "Connected to " + device.getName());
 //                    firstConnection = true;
+                            }
+                        }catch (Exception e){
+                            Log.d("EXCEPTION:::","Caught Exception in uiDeviceFound");
                         }
                     }
                 });
